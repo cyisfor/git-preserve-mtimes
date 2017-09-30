@@ -31,25 +31,29 @@ static void restore_mtime(struct entry e) {
 void restore(int inp) {
 	enum operation op;
 	struct entry e = {};
-	ensure_eq(sizeof(op),read(inp,&op,sizeof(op)));
-	switch(op) {
-	case ASCEND:
-		return;
-	case DESCEND: {
-		read_entry(&e, inp);
-		mkdir(e.name.s,0755);
-		ensure0(chdir(e.name.s));
-		restore(inp);
-		ensure0(chdir(".."));
-		// do this AFTER restoring its contents
-		restore_mtime(e);
-		return;
+	for(;;) {
+		ssize_t amt = read(inp,&op,sizeof(op));
+		if(amt == 0) break;
+		ensure_eq(sizeof(op),amt);
+		switch(op) {
+		case ASCEND:
+			return;
+		case DESCEND: {
+			read_entry(&e, inp);
+			mkdir(e.name.s,0755);
+			ensure0(chdir(e.name.s));
+			restore(inp);
+			ensure0(chdir(".."));
+			// do this AFTER restoring its contents
+			restore_mtime(e);
+			return;
+		}
+		case ENTRY: {
+			read_entry(&e, inp);
+			restore_mtime(e);
+		}
+		};
 	}
-	case ENTRY: {
-		read_entry(&e, inp);
-		restore_mtime(e);
-	}
-	};
 }
 
 int main(int argc, char *argv[])

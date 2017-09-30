@@ -52,16 +52,14 @@ void store(int out, git_tree* tree) {
 			op = ASCEND;
 			write(out,&op,sizeof(op));
 			git_tree_free(ts->tree);
-			chdir("..");
 			// this is the only place it could break out of the loop.
 			if(--nstack == 0) break;
+			chdir("..");
 			continue;
 		}
 		bool istree = (git_tree_entry_type(entry) == GIT_OBJ_TREE);
 		if(istree) {
 			op = DESCEND;
-			const char* path = git_tree_entry_name(entry);
-			ensure0(chdir(path));
 		} else {
 			op = ENTRY;
 		}
@@ -78,6 +76,8 @@ void store(int out, git_tree* tree) {
 			}
 			tstack[nstack].tree = tree;
 			tstack[nstack].pos = 0;
+			const char* path = git_tree_entry_name(entry);
+			ensure0(chdir(path));
 			++nstack;
 		}
 	}
@@ -102,8 +102,10 @@ int main(int argc, char *argv[])
 	}
 
 	int out = open(".tmp",O_WRONLY|O_CREAT|O_TRUNC,0644);
+	ensure_ge(out,0);
 	store(out, head);
 	rename(".tmp",TIMES_PATH);
+	system("pwd");
 	repo_add(TIMES_PATH);
 	return 0;
 }

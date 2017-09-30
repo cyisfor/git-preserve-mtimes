@@ -5,9 +5,7 @@ void smallstring_write(int out, const char* s, size_t len) {
 	write(out,s,len);
 }
 
-smallstring_read(int inp) {
-	string ret;
-	ensure_eq(sizeof(ret.l),read(inp,&ret.l,sizeof(ret.l)));
-	ensure_eq(ret.l,read(inp,&ret.s,ret.l));
-	return ret;
+void smallstring_read(string* out, int inp) {
+	ensure_eq(sizeof(out->l),read(inp,&out->l,sizeof(out->l)));
+	ensure_eq(out->l,read(inp,&out->s,out->l));
 }

@@ -9,7 +9,7 @@ typedef struct mstring {
 	size_t l;
 } mstring;
 
-/* because C sucks, const string str; str.s has type char* not const char*
+/* because C sucks, const mstring str; str.s has type char* not const char*
 	 and there's no way to conditionally make it const char*
  */
 typedef struct string {

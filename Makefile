@@ -7,7 +7,7 @@ export PKG_CONFIG_PATH
 CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-config --cflags $(P)))
 LDLIBS+=$(shell pkg-config --libs $(P))
 
-all: main
+all: hook-store hook-restore
 
 LINK=$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 COMPILE=$(CC) $(CFLAGS) -MMD -MT $@ -c -o $@ $<
@@ -17,8 +17,12 @@ O=$(patsubst %,o/%.o,$N) \
 $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
 
-N=main repo note
-main: $O
+N=hook-store repo note
+hook-store: $O
+	$(LINK)
+
+N=hook-restore repo note
+hook-restore: $O
 	$(LINK)
 
 o/%.o: src/%.c | o

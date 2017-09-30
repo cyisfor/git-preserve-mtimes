@@ -78,7 +78,7 @@ void store(int out, const git_tree* tree) {
 int main(int argc, char *argv[])
 {
 	repo_discover_init(".",1);
-	// follow git index, storing mtimes in .gittime, adding .gittime to the repo
+	// traverse head, storing mtimes in .git_times, adding .git_times to the repo
 	git_tree* head;
 	{
 		// since HEAD

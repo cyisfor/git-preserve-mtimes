@@ -26,7 +26,7 @@ hook-restore: $O
 	$(LINK)
 
 intern/libintern.a: intern/CMakeCache.txt
-	$(MAKE) -C intern libintern.a
+	$(MAKE) -C intern
 
 intern/CMakeCache.txt:
 	cd intern && cmake \

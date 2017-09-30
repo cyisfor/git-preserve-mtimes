@@ -9,9 +9,8 @@
 #include "repo.h"
 #include "note.h"
 
-#include <git2/revwalk.h> 
 #include <git2/tree.h>
-#include <git2/diff.h> 
+#include <git2/index.h>
 #include <git2/refs.h>
 #include <git2/commit.h>
 
@@ -37,7 +36,6 @@ static void write_entry(int out, const string name) {
 	ensure0(stat(name.s,&info));
 	smallstring_write(out, name.s, name.l);
 	write(out,&info.st_mtim, sizeof(info.st_mtim));
-	return ret;
 }
 
 void store(int out, git_tree* tree) {
@@ -51,7 +49,7 @@ void store(int out, git_tree* tree) {
 
 	// since we have to also add the index, we need to check if stuff has been seen...
 
-	struct strings* seen_paths = NULL;
+	struct strings* seen_paths = strings_new();
 	uint32_t last_seen = 1;
 
 	char* root = NULL;
@@ -65,17 +63,20 @@ void store(int out, git_tree* tree) {
 		}
 		root[rootlen] = '/';
 		memcpy(root+rootlen+1,name.s,name.l);
-		root[rootlen+name.l+2] = '\0';
+		root[rootlen+name.l+1] = '\0';
 		// now root is the current full path of name
 		uint32_t seen = strings_intern(seen_paths, root);
-		return seen < last_seen;
-		// already interned, so this entry's already been written
+		bool ret = seen < last_seen;
+		// < = already interned, so this entry's already been written
+		INFO("has_seen %.*s %d",rootlen+name.l+1,root,ret);
+		last_seen = seen;
+		return ret;
 	}
 
 	void extend_root(string name) {
-		if(rootsize - rootlen > name.l + 1) {
-			rootsize = rootlen + name.l + 1;
-			root = realloc(root,rootsize);
+		if(rootspace - rootlen > name.l + 1) {
+			rootspace = rootlen + name.l + 1;
+			root = realloc(root,rootspace);
 		}
 		root[rootlen] = '/';
 		memcpy(root+rootlen+1,name.s,name.l);
@@ -130,7 +131,7 @@ void store(int out, git_tree* tree) {
 			tstack[nstack].nlen = name.l;
 			extend_root(name);
 			INFO("descending");
-			ensure0(chdir(path));
+			ensure0(chdir(name.s));
 			++nstack;
 		}
 	}

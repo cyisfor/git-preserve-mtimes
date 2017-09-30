@@ -59,7 +59,7 @@ void restore(int inp) {
 int main(int argc, char *argv[])
 {
 	int inp = open(TIMES_PATH,O_RDONLY);
-	ensure_ge(inp,0);
+	if(inp < 0) return 1;
 	restore(inp);
 	return 0;
 }

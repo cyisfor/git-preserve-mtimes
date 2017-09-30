@@ -31,6 +31,7 @@ struct treestack {
 
 static void write_entry(int out, const git_tree_entry* entry) {
 	const char* path = git_tree_entry_name(entry);
+	INFO("writing %s",path);
 	struct stat info;
 	ensure0(stat(path,&info));
 	smallstring_write(out, path, strlen(path));
@@ -53,6 +54,7 @@ void store(int out, git_tree* tree) {
 			write(out,&op,sizeof(op));
 			git_tree_free(ts->tree);
 			// this is the only place it could break out of the loop.
+			INFO("ascending");
 			if(--nstack == 0) break;
 			chdir("..");
 			continue;
@@ -77,6 +79,7 @@ void store(int out, git_tree* tree) {
 			tstack[nstack].tree = tree;
 			tstack[nstack].pos = 0;
 			const char* path = git_tree_entry_name(entry);
+			INFO("descending");
 			ensure0(chdir(path));
 			++nstack;
 		}

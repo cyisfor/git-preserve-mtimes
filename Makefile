@@ -25,6 +25,17 @@ N=hook-restore repo note smallstring
 hook-restore: $O
 	$(LINK)
 
+intern/libintern.a: intern/CMakeCache.txt
+	$(MAKE) -C intern libintern.a
+
+intern/CMakeCache.txt:
+	cd intern && cmake \
+		-DMMAP_PAGES=1 \
+		-DPAGE_SIZE=512 \
+		-DINLINE_UNSIGNED=1 \
+		-DBUILD_STATIC=1 \
+		-DCMAKE_BUILD_TYPE=Release
+
 o/%.o: src/%.c | o
 	$(COMPILE)
 

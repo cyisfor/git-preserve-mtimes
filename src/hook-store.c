@@ -27,20 +27,16 @@
 struct treestack {
 	git_tree* tree;
 	int pos;
+	int nlen;
 };
 
-// since we have to also add the index, we need to check if stuff has been seen...
-struct 
-char** seen;
-int nseen;
-
 static void write_entry(int out, const git_tree_entry* entry) {
-	const char* path = git_tree_entry_name(entry);
 	INFO("writing %s",path);
 	struct stat info;
 	ensure0(stat(path,&info));
 	smallstring_write(out, path, strlen(path));
 	write(out,&info.st_mtim, sizeof(info.st_mtim));
+	return ret;
 }
 
 void store(int out, git_tree* tree) {
@@ -50,6 +46,17 @@ void store(int out, git_tree* tree) {
 	int sstack = 4; // space, so don't shrink
 	tstack[0].tree = tree;
 	tstack[0].pos = 0;
+	tstack[0].nlen = 0;
+
+	// since we have to also add the index, we need to check if stuff has been seen...
+
+	struct strings* seen_paths = NULL;
+	uint32_t last_seen = 1;
+
+	char* root = NULL;
+	size_t rootlen = 0;
+	size_t rootspace = 0;
+		
 	for(;;) {
 		enum operation op;
 		struct treestack* ts = &tstack[nstack-1];
@@ -57,6 +64,8 @@ void store(int out, git_tree* tree) {
 		if(entry == NULL) {
 			op = ASCEND;
 			write(out,&op,sizeof(op));
+			// a/b/c/d -> a/b/c
+			rootlen -= ts->nlen + 1;
 			git_tree_free(ts->tree);
 			// this is the only place it could break out of the loop.
 			INFO("ascending");
@@ -71,6 +80,23 @@ void store(int out, git_tree* tree) {
 			op = ENTRY;
 		}
 		write(out,&op,sizeof(op));
+		string name;
+		{
+			name.s = git_tree_entry_name(entry);
+			name.l = strlen(name.s);
+			if(rootspace - rootlen < name.l + 2) {
+				rootspace = rootlen + name.l + 2;
+				root = realloc(root,rootspace);
+			}
+			root[rootlen] = '/';
+			memcpy(root+rootlen+1,name.s,name.l);
+			root[rootlen+name.l+2] = '\0';
+			uint32_t seen = strings_intern(seen_paths, root);
+			if(seen < last_seen) {
+				// already interned, so this entry's already been written
+				continue;
+			}
+		}
 		write_entry(out, entry);
 		++ts->pos;
 		if(istree) {
@@ -83,7 +109,15 @@ void store(int out, git_tree* tree) {
 			}
 			tstack[nstack].tree = tree;
 			tstack[nstack].pos = 0;
-			const char* path = git_tree_entry_name(entry);
+			tstack[nstack].nlen = name.l;
+			if(rootsize - rootlen > name.l + 1) {
+				rootsize = rootlen + name.l + 1;
+				root = realloc(root,rootsize);
+			}
+			root[rootlen] = '/';
+			memcpy(root+rootlen+1,name.s,name.l);
+			rootlen += name.l + 1;
+			// no need for \0 terminator yet
 			INFO("descending");
 			ensure0(chdir(path));
 			++nstack;

@@ -4,7 +4,7 @@ P=libgit2
 PKG_CONFIG_PATH:=/custom/libgit2/lib/pkgconfig
 export PKG_CONFIG_PATH
 
-CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-config --cflags $(P)))
+CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-config --cflags $(P))) -I.
 LDLIBS+=$(shell pkg-config --libs $(P))
 
 all: hook-store hook-restore
@@ -18,7 +18,7 @@ $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
 
 N=hook-store repo note smallstring
-hook-store: $O
+hook-store: $O intern/libintern.a
 	$(LINK)
 
 N=hook-restore repo note smallstring

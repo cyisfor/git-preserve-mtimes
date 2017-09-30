@@ -1,5 +1,6 @@
 #define _GNU_SOURCE // st_mtim
 
+#include "intern/strings.h"
 #include "hook-common.h"
 #include "smallstring.h"
 
@@ -30,11 +31,11 @@ struct treestack {
 	int nlen;
 };
 
-static void write_entry(int out, const git_tree_entry* entry) {
-	INFO("writing %s",path);
+static void write_entry(int out, const string name) {
+	INFO("writing %.*s",name.l,name.s);
 	struct stat info;
-	ensure0(stat(path,&info));
-	smallstring_write(out, path, strlen(path));
+	ensure0(stat(name.s,&info));
+	smallstring_write(out, name.s, name.l);
 	write(out,&info.st_mtim, sizeof(info.st_mtim));
 	return ret;
 }
@@ -114,7 +115,7 @@ void store(int out, git_tree* tree) {
 				continue;
 			}
 		}
-		write_entry(out, entry);
+		write_entry(out, name);
 		++ts->pos;
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
@@ -134,6 +135,26 @@ void store(int out, git_tree* tree) {
 		}
 	}
 	free(tstack);
+	{
+		git_index* index;
+		git_repository_index(&index, repo);
+		size_t count = git_index_entrycount(index);
+		size_t i;
+		for(i=0;i<count;++i) {
+			const git_index_entry * entry = git_index_get_byindex(index,i);
+			ensure_ne(entry,NULL);
+			string path = {
+				.s = entry->path,
+				.l = strlen(entry->path)
+			};
+			if(has_seen(path)) {
+				continue;
+			}
+			// path has / in it, but there's no requirement for entries not to.
+			write_entry(out,path);
+		}
+		git_index_free(index);
+	}
 }
 
 

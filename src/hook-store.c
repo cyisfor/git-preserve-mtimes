@@ -29,6 +29,11 @@ struct treestack {
 	int pos;
 };
 
+// since we have to also add the index, we need to check if stuff has been seen...
+struct 
+char** seen;
+int nseen;
+
 static void write_entry(int out, const git_tree_entry* entry) {
 	const char* path = git_tree_entry_name(entry);
 	INFO("writing %s",path);

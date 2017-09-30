@@ -1,4 +1,7 @@
-#define _GNU_SOURCE // futimens, st_mtim
+#define _GNU_SOURCE // st_mtim
+
+#include "hook-common.h"
+
 #include "ensure.h"
 #include "mystring.h"
 #include "repo.h"
@@ -12,8 +15,6 @@
 
 #include <sys/stat.h>
 
-enum operation { DESCEND, ENTRY, ASCEND };
-
 /* we have to write our own walk, because git_tree_walk doesn't let us know
 	 whether we're starting a new root, or ending one.
 */
@@ -23,7 +24,7 @@ struct treestack {
 	int pos;
 };
 
-void write_entry(int out, git_tree_entry* entry) {
+static void write_entry(int out, git_tree_entry* entry) {
 	const char* path = git_tree_entry_name(entry);
 	struct stat info;
 	ensure0(stat(path,&info));
@@ -31,7 +32,7 @@ void write_entry(int out, git_tree_entry* entry) {
 	write(out,&info.st_mtim, sizeof(info.st_mtim));
 }
 
-void treewalk(int out, const git_tree* tree) {
+void store(int out, const git_tree* tree) {
 	// normal recursion will stack up the oid, count, i, istree, etc.
 	struct treestack* tstack = malloc(sizeof(*tstack) << 2);
 	int nstack = 1;
@@ -90,7 +91,9 @@ int main(int argc, char *argv[])
 		git_commit_free(commit);
 	}
 
-	
-
+	int out = open(".tmp",O_WRONLY|O_CREAT|O_TRUNC,0644);
+	store(out, head);
+	rename(".tmp",TIMES_PATH);
+	repo_add(TIMES_PATH);
 	return 0;
 }

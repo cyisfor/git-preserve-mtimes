@@ -12,14 +12,66 @@
 
 #include <sys/stat.h>
 
-enum { DESCEND, ENTRY, ASCEND };
+enum operation { DESCEND, ENTRY, ASCEND };
 
-typedef int on_entry(const char *root, const git_tree_entry *entry, void *payload) {
-	int out = (int) ((intptr_t) payload);
-	const char* name = git_tree_entry_name(entry);
-	smallstring_write(out,s,strlen(s));
-	
+/* we have to write our own walk, because git_tree_walk doesn't let us know
+	 whether we're starting a new root, or ending one.
+*/
 
+struct treestack {
+	const git_tree* tree;
+	int pos;
+};
+
+void write_entry(int out, git_tree_entry* entry) {
+	const char* path = git_tree_entry_name(entry);
+	struct stat info;
+	ensure0(stat(path,&info));
+	smallstring_write(out, path, strlen(path));
+	write(out,&info.st_mtim, sizeof(info.st_mtim));
+}
+
+void treewalk(int out, const git_tree* tree) {
+	// normal recursion will stack up the oid, count, i, istree, etc.
+	struct treestack* tstack = malloc(sizeof(*tstack) << 2);
+	int nstack = 1;
+	int sstack = 4; // space, so don't shrink
+	tstack[0].tree = tree;
+	tstack[0].pos = 0;
+	for(;;) {
+		enum operation op;
+		struct treestact* ts = tstack[nstack-1];
+		git_tree_entry* entry = git_tree_entry_byindex(ts->tree,ts->pos);
+		if(entry == NULL) {
+			op = ASCEND;
+			write(out,&op,sizeof(op));
+			git_tree_free(ts->tree);
+			// this is the only place it could break out of the loop.
+			if(--nstack == 0) break;
+			continue;
+		}
+		bool istree = (git_tree_entry_type(entry) == GIT_OBJ_TREE);
+		if(istree) {
+			op = DESCEND;
+		} else {
+			op = ENTRY;
+		}
+		write(out,&op,sizeof(op));
+		write_entry(out, entry);
+		++ts->pos;
+		if(istree) {
+			git_oid* oid = git_tree_entry_id(entry);
+			git_tree* tree = git_tree_lookup(oid);
+			if(nstack == sstack) {
+				sstack += 4;
+				tstack = realloc(tstack, sizeof(*tstack)*(sstack));
+			}
+			tstack[nstack] = tree;
+			++nstack;
+		}
+	}
+	free(tstack);
+}
 
 
 int main(int argc, char *argv[])

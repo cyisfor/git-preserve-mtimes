@@ -45,8 +45,8 @@ void store(int out, const git_tree* tree) {
 	tstack[0].pos = 0;
 	for(;;) {
 		enum operation op;
-		struct treestack* ts = tstack[nstack-1];
-		git_tree_entry* entry = git_tree_entry_byindex(ts->tree,ts->pos);
+		struct treestack* ts = &tstack[nstack-1];
+		const git_tree_entry* entry = git_tree_entry_byindex(ts->tree,ts->pos);
 		if(entry == NULL) {
 			op = ASCEND;
 			write(out,&op,sizeof(op));
@@ -66,7 +66,8 @@ void store(int out, const git_tree* tree) {
 		++ts->pos;
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
-			const git_tree* tree = git_tree_lookup(oid);
+			const git_tree* tree;
+			repo_check(git_tree_lookup(&tree, repo, oid));
 			if(nstack == sstack) {
 				sstack += 4;
 				tstack = realloc(tstack, sizeof(*tstack)*(sstack));

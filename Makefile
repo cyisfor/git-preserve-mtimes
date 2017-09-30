@@ -17,11 +17,11 @@ O=$(patsubst %,o/%.o,$N) \
 $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
 
-N=hook-store repo note
+N=hook-store repo note smallstring
 hook-store: $O
 	$(LINK)
 
-N=hook-restore repo note
+N=hook-restore repo note smallstring
 hook-restore: $O
 	$(LINK)
 

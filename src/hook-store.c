@@ -56,6 +56,31 @@ void store(int out, git_tree* tree) {
 	char* root = NULL;
 	size_t rootlen = 0;
 	size_t rootspace = 0;
+
+	bool has_seen(string name) {
+		if(rootspace - rootlen < name.l + 2) {
+			rootspace = rootlen + name.l + 2;
+			root = realloc(root,rootspace);
+		}
+		root[rootlen] = '/';
+		memcpy(root+rootlen+1,name.s,name.l);
+		root[rootlen+name.l+2] = '\0';
+		// now root is the current full path of name
+		uint32_t seen = strings_intern(seen_paths, root);
+		return seen < last_seen;
+		// already interned, so this entry's already been written
+	}
+
+	void extend_root(string name) {
+		if(rootsize - rootlen > name.l + 1) {
+			rootsize = rootlen + name.l + 1;
+			root = realloc(root,rootsize);
+		}
+		root[rootlen] = '/';
+		memcpy(root+rootlen+1,name.s,name.l);
+		rootlen += name.l + 1;
+		// no need for \0 terminator yet
+	}
 		
 	for(;;) {
 		enum operation op;
@@ -65,6 +90,7 @@ void store(int out, git_tree* tree) {
 			op = ASCEND;
 			write(out,&op,sizeof(op));
 			// a/b/c/d -> a/b/c
+			// unextend root?
 			rootlen -= ts->nlen + 1;
 			git_tree_free(ts->tree);
 			// this is the only place it could break out of the loop.
@@ -84,16 +110,7 @@ void store(int out, git_tree* tree) {
 		{
 			name.s = git_tree_entry_name(entry);
 			name.l = strlen(name.s);
-			if(rootspace - rootlen < name.l + 2) {
-				rootspace = rootlen + name.l + 2;
-				root = realloc(root,rootspace);
-			}
-			root[rootlen] = '/';
-			memcpy(root+rootlen+1,name.s,name.l);
-			root[rootlen+name.l+2] = '\0';
-			uint32_t seen = strings_intern(seen_paths, root);
-			if(seen < last_seen) {
-				// already interned, so this entry's already been written
+			if(has_seen(name)) {
 				continue;
 			}
 		}
@@ -110,14 +127,7 @@ void store(int out, git_tree* tree) {
 			tstack[nstack].tree = tree;
 			tstack[nstack].pos = 0;
 			tstack[nstack].nlen = name.l;
-			if(rootsize - rootlen > name.l + 1) {
-				rootsize = rootlen + name.l + 1;
-				root = realloc(root,rootsize);
-			}
-			root[rootlen] = '/';
-			memcpy(root+rootlen+1,name.s,name.l);
-			rootlen += name.l + 1;
-			// no need for \0 terminator yet
+			extend_root(name);
 			INFO("descending");
 			ensure0(chdir(path));
 			++nstack;

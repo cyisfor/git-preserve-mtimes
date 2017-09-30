@@ -2,6 +2,8 @@
 #include "hook-common.h"
 
 #include "ensure.h"
+#include "mystring.h"
+#include "smallstring.h"
 
 #include <fcntl.h> // AT_FDCWD
 #include <sys/stat.h> // utimensat, mkdir
@@ -23,7 +25,7 @@ static void restore_mtime(struct entry e) {
 		e.mtime, // meh to atime
 		e.mtime
 	};
-	utimensat(AT_FDCWD, e.name.s, times);
+	utimensat(AT_FDCWD, e.name.s, times, 0);
 }
 
 void restore(int inp) {
@@ -35,7 +37,7 @@ void restore(int inp) {
 		return;
 	case DESCEND: {
 		read_entry(&e, inp);
-		mkdir(e.name.s);
+		mkdir(e.name.s,0755);
 		ensure0(chdir(e.name.s));
 		restore(inp);
 		ensure0(chdir(".."));
@@ -43,9 +45,10 @@ void restore(int inp) {
 		restore_mtime(e);
 		return;
 	}
-	case ENTRY:
-		struct entry e = read_entry(inp);
+	case ENTRY: {
+		read_entry(&e, inp);
 		restore_mtime(e);
+	}
 	};
 }
 

@@ -1,6 +1,7 @@
 #define _GNU_SOURCE // st_mtim
 
 #include "hook-common.h"
+#include "smallstring.h"
 
 #include "ensure.h"
 #include "mystring.h"
@@ -12,6 +13,9 @@
 #include <git2/diff.h> 
 #include <git2/refs.h>
 #include <git2/commit.h>
+
+#include <unistd.h> // write
+#include <fcntl.h> // open, O_*
 
 #include <sys/stat.h>
 
@@ -41,7 +45,7 @@ void store(int out, const git_tree* tree) {
 	tstack[0].pos = 0;
 	for(;;) {
 		enum operation op;
-		struct treestact* ts = tstack[nstack-1];
+		struct treestack* ts = tstack[nstack-1];
 		git_tree_entry* entry = git_tree_entry_byindex(ts->tree,ts->pos);
 		if(entry == NULL) {
 			op = ASCEND;
@@ -61,8 +65,8 @@ void store(int out, const git_tree* tree) {
 		write_entry(out, entry);
 		++ts->pos;
 		if(istree) {
-			git_oid* oid = git_tree_entry_id(entry);
-			git_tree* tree = git_tree_lookup(oid);
+			const git_oid* oid = git_tree_entry_id(entry);
+			const git_tree* tree = git_tree_lookup(oid);
 			if(nstack == sstack) {
 				sstack += 4;
 				tstack = realloc(tstack, sizeof(*tstack)*(sstack));

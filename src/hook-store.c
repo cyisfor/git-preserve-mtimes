@@ -97,6 +97,10 @@ void store(int out, git_tree* tree) {
 		struct treestack* ts = &tstack[nstack-1];
 		const git_tree_entry* entry = git_tree_entry_byindex(ts->tree,ts->pos);
 		if(entry == NULL) {
+			if(nstack == 1) {
+				// we ascended to the top
+				break;
+			}
 			op = ASCEND;
 			write(out,&op,sizeof(op));
 			// a/b/c/d -> a/b/c
@@ -107,7 +111,7 @@ void store(int out, git_tree* tree) {
 			git_tree_free(ts->tree);
 			// this is the only place it could break out of the loop.
 			INFO("ascending");
-			if(--nstack == 0) break;
+			ensure_gt(--nstack, 0);
 			chdir("..");
 			continue;
 		}
@@ -147,6 +151,7 @@ void store(int out, git_tree* tree) {
 	}
 	free(tstack);
 	{
+		enum operation op = ENTRY;
 		git_index* index;
 		git_repository_index(&index, repo);
 		size_t count = git_index_entrycount(index);
@@ -162,6 +167,7 @@ void store(int out, git_tree* tree) {
 				continue;
 			}
 			// path has / in it, but there's no requirement for entries not to.
+			write(out,&op,sizeof(op));
 			write_entry(out,path);
 		}
 		git_index_free(index);

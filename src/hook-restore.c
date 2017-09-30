@@ -26,6 +26,7 @@ static void restore_mtime(struct entry e) {
 		e.mtime, // meh to atime
 		e.mtime
 	};
+	INFO("T %d",e.mtime.tv_sec);
 	utimensat(AT_FDCWD, e.name.s, times, 0);
 }
 
@@ -65,6 +66,8 @@ int main(int argc, char *argv[])
 {
 	int inp = open(TIMES_PATH,O_RDONLY);
 	if(inp < 0) return 1;
+	restore(inp);
+	INFO("restore staged files:");
 	restore(inp);
 	return 0;
 }

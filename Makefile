@@ -18,7 +18,7 @@ $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
 
 N=main repo note
-generate: $O
+main: $O
 	$(LINK)
 
 o/%.o: src/%.c | o

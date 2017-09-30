@@ -61,14 +61,18 @@ void store(int out, git_tree* tree) {
 			rootspace = rootlen + name.l + 2;
 			root = realloc(root,rootspace);
 		}
-		root[rootlen] = '/';
-		memcpy(root+rootlen+1,name.s,name.l);
-		root[rootlen+name.l+1] = '\0';
+		size_t len = rootlen;
+		if(len > 0) {
+			root[len++] = '/';
+		}
+		memcpy(root+len,name.s,name.l);
+		len += name.l;
+		root[len] = '\0';
 		// now root is the current full path of name
 		uint32_t seen = strings_intern(seen_paths, root);
 		bool ret = seen < last_seen;
 		// < = already interned, so this entry's already been written
-		INFO("has_seen %.*s %d",rootlen+name.l+1,root,ret);
+		INFO("has_seen %.*s %d",len,root,ret);
 		last_seen = seen;
 		return ret;
 	}
@@ -78,9 +82,11 @@ void store(int out, git_tree* tree) {
 			rootspace = rootlen + name.l + 1;
 			root = realloc(root,rootspace);
 		}
-		root[rootlen] = '/';
-		memcpy(root+rootlen+1,name.s,name.l);
-		rootlen += name.l + 1;
+		if(rootlen > 0) {
+			root[rootlen++] = '/';
+		}
+		memcpy(root+rootlen,name.s,name.l);
+		rootlen += name.l;
 		// no need for \0 terminator yet
 	}
 		

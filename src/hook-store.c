@@ -16,6 +16,7 @@
 
 #include <unistd.h> // write
 #include <fcntl.h> // open, O_*
+#include <stdio.h> // rename
 
 #include <sys/stat.h>
 
@@ -24,11 +25,11 @@
 */
 
 struct treestack {
-	const git_tree* tree;
+	git_tree* tree;
 	int pos;
 };
 
-static void write_entry(int out, git_tree_entry* entry) {
+static void write_entry(int out, const git_tree_entry* entry) {
 	const char* path = git_tree_entry_name(entry);
 	struct stat info;
 	ensure0(stat(path,&info));
@@ -36,7 +37,7 @@ static void write_entry(int out, git_tree_entry* entry) {
 	write(out,&info.st_mtim, sizeof(info.st_mtim));
 }
 
-void store(int out, const git_tree* tree) {
+void store(int out, git_tree* tree) {
 	// normal recursion will stack up the oid, count, i, istree, etc.
 	struct treestack* tstack = malloc(sizeof(*tstack) << 2);
 	int nstack = 1;
@@ -51,6 +52,7 @@ void store(int out, const git_tree* tree) {
 			op = ASCEND;
 			write(out,&op,sizeof(op));
 			git_tree_free(ts->tree);
+			chdir("..");
 			// this is the only place it could break out of the loop.
 			if(--nstack == 0) break;
 			continue;
@@ -58,6 +60,8 @@ void store(int out, const git_tree* tree) {
 		bool istree = (git_tree_entry_type(entry) == GIT_OBJ_TREE);
 		if(istree) {
 			op = DESCEND;
+			const char* path = git_tree_entry_name(entry);
+			ensure0(chdir(path));
 		} else {
 			op = ENTRY;
 		}
@@ -66,13 +70,14 @@ void store(int out, const git_tree* tree) {
 		++ts->pos;
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
-			const git_tree* tree;
+			git_tree* tree;
 			repo_check(git_tree_lookup(&tree, repo, oid));
 			if(nstack == sstack) {
 				sstack += 4;
 				tstack = realloc(tstack, sizeof(*tstack)*(sstack));
 			}
-			tstack[nstack] = tree;
+			tstack[nstack].tree = tree;
+			tstack[nstack].pos = 0;
 			++nstack;
 		}
 	}

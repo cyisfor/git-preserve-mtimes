@@ -1,6 +1,7 @@
 #define _GNU_SOURCE // utimensat, AT_FDCWD
 #include "hook-common.h"
 
+#include "note.h"
 #include "ensure.h"
 #include "mystring.h"
 #include "smallstring.h"
@@ -37,9 +38,12 @@ void restore(int inp) {
 		ensure_eq(sizeof(op),amt);
 		switch(op) {
 		case ASCEND:
+			INFO("UP");
 			return;
 		case DESCEND: {
+			INFO("DOWN");
 			read_entry(&e, inp);
+			INFO("name %.*s",e.name.l,e.name.s);
 			mkdir(e.name.s,0755);
 			ensure0(chdir(e.name.s));
 			restore(inp);
@@ -50,6 +54,7 @@ void restore(int inp) {
 		}
 		case ENTRY: {
 			read_entry(&e, inp);
+			INFO("ent %.*s",e.name.l,e.name.s);
 			restore_mtime(e);
 		}
 		};

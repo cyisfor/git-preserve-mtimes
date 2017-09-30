@@ -72,8 +72,10 @@ void store(int out, git_tree* tree) {
 		uint32_t seen = strings_intern(seen_paths, root);
 		bool ret = seen < last_seen;
 		// < = already interned, so this entry's already been written
-		INFO("has_seen %.*s %d",len,root,ret);
-		last_seen = seen;
+		INFO("has_seen %.*s %d < %d %d",len,root,seen, last_seen, ret);
+		if(!ret) {
+			last_seen = seen;
+		}
 		return ret;
 	}
 
@@ -99,7 +101,9 @@ void store(int out, git_tree* tree) {
 			write(out,&op,sizeof(op));
 			// a/b/c/d -> a/b/c
 			// unextend root?
-			rootlen -= ts->nlen + 1;
+			ensure_ge(rootlen,ts->nlen);
+			rootlen -= ts->nlen;
+			if(rootlen > 0) --rootlen; // eat /
 			git_tree_free(ts->tree);
 			// this is the only place it could break out of the loop.
 			INFO("ascending");

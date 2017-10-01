@@ -5,6 +5,7 @@ PKG_CONFIG_PATH:=/custom/libgit2/lib/pkgconfig
 export PKG_CONFIG_PATH
 
 CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-config --cflags $(P))) -I.
+CFLAGS+=-fshort-enums
 LDLIBS+=$(shell pkg-config --libs $(P))
 
 all: store restore installer

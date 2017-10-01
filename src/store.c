@@ -121,13 +121,7 @@ void store(int out, git_tree* tree) {
 			chdir("..");
 			continue;
 		}
-		bool istree = (git_tree_entry_type(entry) == GIT_OBJ_TREE);
-		if(istree) {
-			op = DESCEND;
-		} else {
-			op = ENTRY;
-		}
-		write(out,&op,sizeof(op));
+
 		string name;
 		{
 			name.s = git_tree_entry_name(entry);
@@ -136,6 +130,14 @@ void store(int out, git_tree* tree) {
 				continue;
 			}
 		}
+		
+		bool istree = (git_tree_entry_type(entry) == GIT_OBJ_TREE);
+		if(istree) {
+			op = DESCEND;
+		} else {
+			op = ENTRY;
+		}
+		write(out,&op,sizeof(op));
 		write_entry(out, name);
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
@@ -151,7 +153,7 @@ void store(int out, git_tree* tree) {
 			extend_root(name);
 			INFO("descending");
 			ensure0(chdir(name.s));
-q			++nstack;
+			++nstack;
 		}
 	}
 	free(tstack);

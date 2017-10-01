@@ -30,10 +30,18 @@ struct treestack {
 	int nlen;
 };
 
-static void write_entry(int out, const string name) {
-	//INFO("writing %.*s",name.l,name.s);
+bool dirty = false;
+
+static void write_entry(int out, const string name, struct operation op) {
 	struct stat info;
-	ensure0(stat(name.s,&info));
+	if(0 != stat(name.s,&info)) {
+		//INFO("deleted %.*s",name.l,name.s);
+		// allow this marked as "seen" since we don't need to save it at all.
+		return;
+	}
+
+	dirty = true;
+	write(out,&op,sizeof(op));
 	smallstring_write(out, name.s, name.l);
 	write(out,&info.st_mtim, sizeof(info.st_mtim));
 }
@@ -131,15 +139,15 @@ void store(int out, git_tree* tree) {
 				continue;
 			}
 		}
-		
-		bool istree = (git_tree_entry_type(entry) == GIT_OBJ_TREE);
+
+		int type = git_tree_entry_type(entry);
+		bool istree = (type == GIT_OBJ_TREE);
 		if(istree) {
 			op = DESCEND;
 		} else {
 			op = ENTRY;
 		}
-		write(out,&op,sizeof(op));
-		write_entry(out, name);
+		write_entry(out, name,op);
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
 			git_tree* tree;
@@ -178,8 +186,7 @@ void store_index(int out) {
 			continue;
 		}
 		// path has / in it, but there's no requirement for entries not to.
-		write(out,&op,sizeof(op));
-		write_entry(out,path);
+		write_entry(out,path,op);
 	}
 	git_index_free(index);
 }

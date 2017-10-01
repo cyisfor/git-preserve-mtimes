@@ -7,7 +7,7 @@ export PKG_CONFIG_PATH
 CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-config --cflags $(P))) -I.
 LDLIBS+=$(shell pkg-config --libs $(P))
 
-all: hook-store hook-restore
+all: hook-store hook-restore installer
 
 LINK=$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 COMPILE=$(CC) $(CFLAGS) -MMD -MT $@ -c -o $@ $<
@@ -16,6 +16,10 @@ COMPILE=$(CC) $(CFLAGS) -MMD -MT $@ -c -o $@ $<
 O=$(patsubst %,o/%.o,$N) \
 $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
+
+N=install
+installer: $O
+	$(LINK)
 
 N=hook-store repo note smallstring
 hook-store: $O intern/libintern.a

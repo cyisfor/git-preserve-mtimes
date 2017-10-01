@@ -38,6 +38,56 @@ static void write_entry(int out, const string name) {
 	write(out,&info.st_mtim, sizeof(info.st_mtim));
 }
 
+
+// since we have to also add the index, we need to check if stuff has been seen...
+
+struct strings* seen_paths = NULL;
+uint32_t last_seen = 1;
+
+char* root = NULL;
+size_t rootlen = 0;
+size_t rootspace = 0;
+
+bool has_seen(string name) {
+	// never write anything named .git_times
+	if(name.l == LITSIZ(TIMES_PATH) &&
+		 0==memcmp(name.s,LITLEN(TIMES_PATH)))
+		return true;
+	if(rootspace - rootlen < name.l + 2) {
+		rootspace = rootlen + name.l + 2;
+		root = realloc(root,rootspace);
+	}
+	size_t len = rootlen;
+	if(len > 0) {
+		root[len++] = '/';
+	}
+	memcpy(root+len,name.s,name.l);
+	len += name.l;
+	root[len] = '\0';
+	// now root is the current full path of name
+	uint32_t seen = strings_intern(seen_paths, root);
+	bool ret = seen < last_seen;
+	// < = already interned, so this entry's already been written
+	INFO("has_seen %.*s %d < %d %d",len,root,seen, last_seen, ret);
+	if(!ret) {
+		last_seen = seen;
+	}
+	return ret;
+}
+
+void extend_root(string name) {
+	if(rootspace - rootlen > name.l + 1) {
+		rootspace = rootlen + name.l + 1;
+		root = realloc(root,rootspace);
+	}
+	if(rootlen > 0) {
+		root[rootlen++] = '/';
+	}
+	memcpy(root+rootlen,name.s,name.l);
+	rootlen += name.l;
+	// no need for \0 terminator yet
+}
+
 void store(int out, git_tree* tree) {
 	// normal recursion will stack up the oid, count, i, istree, etc.
 	struct treestack* tstack = malloc(sizeof(*tstack) << 2);
@@ -46,55 +96,6 @@ void store(int out, git_tree* tree) {
 	tstack[0].tree = tree;
 	tstack[0].pos = 0;
 	tstack[0].nlen = 0;
-
-	// since we have to also add the index, we need to check if stuff has been seen...
-
-	struct strings* seen_paths = strings_new();
-	uint32_t last_seen = 1;
-
-	char* root = NULL;
-	size_t rootlen = 0;
-	size_t rootspace = 0;
-
-	bool has_seen(string name) {
-		// never write anything named .git_times
-		if(name.l == LITSIZ(TIMES_PATH) &&
-			 0==memcmp(name.s,LITLEN(TIMES_PATH)))
-			return true;
-		if(rootspace - rootlen < name.l + 2) {
-			rootspace = rootlen + name.l + 2;
-			root = realloc(root,rootspace);
-		}
-		size_t len = rootlen;
-		if(len > 0) {
-			root[len++] = '/';
-		}
-		memcpy(root+len,name.s,name.l);
-		len += name.l;
-		root[len] = '\0';
-		// now root is the current full path of name
-		uint32_t seen = strings_intern(seen_paths, root);
-		bool ret = seen < last_seen;
-		// < = already interned, so this entry's already been written
-		INFO("has_seen %.*s %d < %d %d",len,root,seen, last_seen, ret);
-		if(!ret) {
-			last_seen = seen;
-		}
-		return ret;
-	}
-
-	void extend_root(string name) {
-		if(rootspace - rootlen > name.l + 1) {
-			rootspace = rootlen + name.l + 1;
-			root = realloc(root,rootspace);
-		}
-		if(rootlen > 0) {
-			root[rootlen++] = '/';
-		}
-		memcpy(root+rootlen,name.s,name.l);
-		rootlen += name.l;
-		// no need for \0 terminator yet
-	}
 		
 	for(;;) {
 		enum operation op;
@@ -186,6 +187,7 @@ void store_index(int out) {
 
 int main(int argc, char *argv[])
 {
+	seen_paths = strings_new();
 	repo_discover_init(".",1);
 	// traverse head, storing mtimes in .git_times, adding .git_times to the repo
 	git_tree* head = NULL;

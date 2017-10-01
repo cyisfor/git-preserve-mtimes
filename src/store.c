@@ -100,6 +100,8 @@ void store(int out, git_tree* tree) {
 		enum operation op;
 		struct treestack* ts = &tstack[nstack-1];
 		const git_tree_entry* entry = git_tree_entry_byindex(ts->tree,ts->pos);
+		++ts->pos;
+
 		if(entry == NULL) {
 			if(nstack == 1) {
 				// we ascended to the top
@@ -135,7 +137,6 @@ void store(int out, git_tree* tree) {
 			}
 		}
 		write_entry(out, name);
-		++ts->pos;
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
 			git_tree* tree;
@@ -150,7 +151,7 @@ void store(int out, git_tree* tree) {
 			extend_root(name);
 			INFO("descending");
 			ensure0(chdir(name.s));
-			++nstack;
+q			++nstack;
 		}
 	}
 	free(tstack);

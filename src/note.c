@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h> // abort, getenv
 #include <stdarg.h> // va_*
+#include <errno.h>
 
 struct note_options note_options = {};
 
@@ -43,6 +44,9 @@ DEFINE(warn,"WARN");
 
 HEAD(error) {
 	BODY("ERROR");
+	if(errno) {
+		perror("errno");
+	}
 	if(getenv("error_nonfatal")) return;
 	if(jumping) {
 		longjmp(jumper, 1);

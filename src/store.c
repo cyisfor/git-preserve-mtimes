@@ -31,7 +31,7 @@ struct treestack {
 };
 
 static void write_entry(int out, const string name) {
-	INFO("writing %.*s",name.l,name.s);
+	//INFO("writing %.*s",name.l,name.s);
 	struct stat info;
 	ensure0(stat(name.s,&info));
 	smallstring_write(out, name.s, name.l);
@@ -68,7 +68,7 @@ bool has_seen(string name) {
 	uint32_t seen = strings_intern(seen_paths, root);
 	bool ret = seen < last_seen;
 	// < = already interned, so this entry's already been written
-	INFO("has_seen %.*s %d < %d %d",len,root,seen, last_seen, ret);
+	//INFO("has_seen %.*s %d < %d %d",len,root,seen, last_seen, ret);
 	if(!ret) {
 		last_seen = seen;
 	}
@@ -162,8 +162,9 @@ void store(int out, git_tree* tree) {
 
 void store_index(int out) {
 	enum operation op = ENTRY;
-	git_index* index = repo_index();
-
+	git_index* index = NULL;
+	repo_check(git_repository_index(&index, repo));
+	//INFO("index %s",git_index_path(index));
 	size_t count = git_index_entrycount(index);
 	size_t i;
 	for(i=0;i<count;++i) {
@@ -187,6 +188,7 @@ void store_index(int out) {
 
 int main(int argc, char *argv[])
 {
+	note_init();
 	seen_paths = strings_new();
 	repo_discover_init(".",1);
 	// traverse head, storing mtimes in .git_times, adding .git_times to the repo

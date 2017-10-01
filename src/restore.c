@@ -26,7 +26,7 @@ static void restore_mtime(struct entry e) {
 		e.mtime, // meh to atime
 		e.mtime
 	};
-	INFO("T %d",e.mtime.tv_sec);
+	//INFO("T %d",e.mtime.tv_sec);
 	utimensat(AT_FDCWD, e.name.s, times, 0);
 }
 
@@ -55,7 +55,7 @@ void restore(int inp) {
 		}
 		case ENTRY: {
 			read_entry(&e, inp);
-			INFO("ent %.*s",e.name.l,e.name.s);
+			//INFO("ent %.*s",e.name.l,e.name.s);
 			restore_mtime(e);
 		}
 		};
@@ -64,10 +64,11 @@ void restore(int inp) {
 
 int main(int argc, char *argv[])
 {
+	note_init();
 	int inp = open(TIMES_PATH,O_RDONLY);
 	if(inp < 0) return 1; // aww, no .git_times file found...
 	restore(inp);
-	INFO("restore staged files:");
+	//INFO("restore staged files:");
 	restore(inp);
 	return 0;
 }

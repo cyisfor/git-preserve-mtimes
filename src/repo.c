@@ -68,7 +68,7 @@ int repo_discover_init(char* start, int len) {
 	git_libgit2_init();
 	int res = git_repository_open_ext(&repo,
 																		start,
-																		0,
+																		GIT_REPOSITORY_OPEN_FROM_ENV,
 																		NULL);
 	if(end != NULL) {
 		*end = save;
@@ -106,30 +106,18 @@ void repo_check(git_error_code e) {
 }
 
 void repo_add(const char* path) {
-	git_index* idx = repo_index(); // careful...
+	git_index* idx = NULL;
+	repo_check(git_repository_index(&idx, repo));
 	git_index_read(idx, 1);
 	assert(idx);
 	assert(path);
 	
 	// don't repo_check b/c this fails if already added
-	if(repo_carp(git_index_add_bypath(idx, path))) {
+	if(0==repo_carp(git_index_add_bypath(idx, path))) {
 		printf("added path %s\n",path);
 		git_index_write(idx);
 	} else {
 		printf("error adding path %s\n",path);
 	}
 	git_index_free(idx);
-}
-
-git_index* repo_index(void) {
-	git_index* ret = NULL;
-	system("ls -l .git/index*");
-	if(getenv("GIT_INDEX_FILE")) {
-		// NOT git_repository_index
-		// during a hook, that is NOT the index.
-		repo_check(git_index_open(&ret,getenv("GIT_INDEX_FILE")));
-	} else {
-		repo_check(git_repository_index(&ret, repo));
-	}
-	return ret;
 }

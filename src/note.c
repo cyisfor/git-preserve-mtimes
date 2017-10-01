@@ -1,5 +1,6 @@
 #include "note.h"
 
+#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h> // abort, getenv
 #include <stdarg.h> // va_*
@@ -51,7 +52,7 @@ HEAD(error) {
 
 bool note_catch(void) {
 	jumping = true;
-	return 0 == setjmp(jumper);
+	return 0 != setjmp(jumper);
 }
 
 void note_init(void) {

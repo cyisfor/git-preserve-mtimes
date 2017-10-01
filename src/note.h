@@ -19,6 +19,7 @@ void spamf(const char* file, int flen, int line, const char* fmt, ...);
 
 #include <stdbool.h>
 
+bool note_catch(void);
 
 struct note_options {
 	bool show_method;

@@ -57,6 +57,10 @@ void store(int out, git_tree* tree) {
 	size_t rootspace = 0;
 
 	bool has_seen(string name) {
+		// never write anything named .git_times
+		if(name.l == LITSIZ(TIMES_PATH) &&
+			 0==memcmp(name.s,LITLEN(TIMES_PATH)))
+			return true;
 		if(rootspace - rootlen < name.l + 2) {
 			rootspace = rootlen + name.l + 2;
 			root = realloc(root,rootspace);

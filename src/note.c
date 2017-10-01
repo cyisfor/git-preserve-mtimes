@@ -6,6 +6,9 @@
 
 struct note_options note_options = {};
 
+static bool jumping = false;
+static jmp_buf jumper;
+
 static void note(const char* how, int hlen,
 								 const char* file, int flen,
 								 int line, const char* fmt, va_list arg) {
@@ -40,7 +43,15 @@ DEFINE(warn,"WARN");
 HEAD(error) {
 	BODY("ERROR");
 	if(getenv("error_nonfatal")) return;
+	if(jumping) {
+		longjmp(jumper, 1);
+	}
 	abort();
+}
+
+bool note_catch(void) {
+	jumping = true;
+	return 0 == setjmp(jumper);
 }
 
 void note_init(void) {

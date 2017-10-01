@@ -191,11 +191,18 @@ int main(int argc, char *argv[])
 		git_commit_free(commit);
 	}
 
-	int out = open(".tmp",O_WRONLY|O_CREAT|O_TRUNC,0644);
-	ensure_ge(out,0);
-	store(out, head);
-	rename(".tmp",TIMES_PATH);
-	system("pwd");
-	repo_add(TIMES_PATH);
+	char temp[] = ".tmpXXXXXX";
+
+	int out = mkstemp(temp);
+	if(note_catch()) {
+		unlink(temp);
+		abort();
+	} else {
+		ensure_ge(out,0);
+		store(out, head);
+		rename(temp,TIMES_PATH);
+		system("pwd");
+		repo_add(TIMES_PATH);
+	}
 	return 0;
 }

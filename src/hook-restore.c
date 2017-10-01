@@ -65,7 +65,7 @@ void restore(int inp) {
 int main(int argc, char *argv[])
 {
 	int inp = open(TIMES_PATH,O_RDONLY);
-	if(inp < 0) return 1;
+	if(inp < 0) return 1; // aww, no .git_times file found...
 	restore(inp);
 	INFO("restore staged files:");
 	restore(inp);

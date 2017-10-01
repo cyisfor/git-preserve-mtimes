@@ -101,8 +101,7 @@ void repo_check(git_error_code e) {
 }
 
 void repo_add(const char* path) {
-	git_index* idx;
-	repo_check(git_repository_index(&idx, repo));
+	git_index* idx = repo_index(); // careful...
 	git_index_read(idx, 1);
 	assert(idx);
 	assert(path);
@@ -115,4 +114,16 @@ void repo_add(const char* path) {
 		printf("error adding path %s\n",path);
 	}
 	git_index_free(idx);
+}
+
+git_index* repo_index(void) {
+	git_index* ret = NULL;
+	if(getenv("GIT_INDEX_FILE")) {
+		// NOT git_repository_index
+		// during a hook, that is NOT the index.
+		repo_check(git_index_open(&ret,getenv("GIT_INDEX_FILE")))
+	} else {
+		repo_check(git_repository_index(&ret, repo));
+	}
+	return ret;
 }

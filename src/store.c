@@ -161,32 +161,33 @@ void store(int out, git_tree* tree) {
 }
 
 void store_index(int out) {
-		enum operation op = ENTRY;
-		git_index* index;
-		git_repository_index(&index, repo);
-		size_t count = git_index_entrycount(index);
-		size_t i;
-		for(i=0;i<count;++i) {
-			const git_index_entry * entry = git_index_get_byindex(index,i);
-			ensure_ne(entry,NULL);
-			string path = {
-				.s = entry->path,
-				.l = strlen(entry->path)
-			};
-			if(has_seen(path)) {
-				continue;
-			}
-			// path has / in it, but there's no requirement for entries not to.
-			write(out,&op,sizeof(op));
-			write_entry(out,path);
+	enum operation op = ENTRY;
+	git_index* index = repo_index();
+
+	size_t count = git_index_entrycount(index);
+	size_t i;
+	for(i=0;i<count;++i) {
+		const git_index_entry * entry = git_index_get_byindex(index,i);
+		ensure_ne(entry,NULL);
+		string path = {
+			.s = entry->path,
+			.l = strlen(entry->path)
+		};
+		if(has_seen(path)) {
+			continue;
 		}
-		git_index_free(index);
+		// path has / in it, but there's no requirement for entries not to.
+		write(out,&op,sizeof(op));
+		write_entry(out,path);
 	}
+	git_index_free(index);
 }
+
 
 
 int main(int argc, char *argv[])
 {
+	system("set");
 	seen_paths = strings_new();
 	repo_discover_init(".",1);
 	// traverse head, storing mtimes in .git_times, adding .git_times to the repo

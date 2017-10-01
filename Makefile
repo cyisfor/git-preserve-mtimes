@@ -21,12 +21,12 @@ N=install
 installer: $O
 	$(LINK)
 
-N=hook-store repo note smallstring
-hook-store: $O intern/libintern.a
+N=store repo note smallstring
+store: $O intern/libintern.a
 	$(LINK)
 
-N=hook-restore repo note smallstring
-hook-restore: $O
+N=restore repo note smallstring
+restore: $O
 	$(LINK)
 
 intern/libintern.a: intern/CMakeCache.txt

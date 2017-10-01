@@ -7,14 +7,16 @@
 int main(int argc, char *argv[])
 {
 	// may be relative, but ok
-	const char* exe = argv[0];
-	size_t elen = strlen(exe);
-	char* s = memrchr(exe,'/',elen);
+	const char* here = argv[0];
+	size_t len = strlen(here);
+	size_t hlen = 0;
+	char* s = memrchr(here,'/',len);
 	if(s) {
-		printf("um %p %p %x\n",s,exe,s-exe);
-		*s = '\0';
+		hlen = s - here + 1; // include the slash
 	}
-	puts(exe);
+	fwrite(here,hlen,1,stdout);
+	putchar('\n');
+	puts(here);
 	
 	return 0;
 }

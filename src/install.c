@@ -2,6 +2,7 @@
 
 #include "mystring.h"
 #include "ensure.h"
+#include "note.h"
 
 #include <sys/stat.h> // chmod
 
@@ -11,6 +12,7 @@
 #include <fcntl.h> // open
 #include <assert.h>
 #include <stdio.h> // rename
+#include <errno.h>
 
 
 int main(int argc, char *argv[])
@@ -30,8 +32,11 @@ int main(int argc, char *argv[])
 		// note: this fails hard if pre-commit is an executable
 		// TODO: rename pre-commit to old-pre-commit, and have pre-commit exec it
 		// but how to stop from wrapping our pre-commit, that wraps another pre-commit?
-		int out = open(dest,O_APPEND|O_CREAT|O_WRONLY,0755);
-		assert(out >= 0);
+		int out = open(dest,O_APPEND|O_CREAT|O_EXCL|O_WRONLY,0755);
+		if(out<0) {
+			WARN("couldn't create %s",dest);
+			perror("errno");
+		}
 		ensure_eq(hlen, write(out,here,hlen));
 		ensure_eq(clen, write(out,contents,clen));
 		close(out);

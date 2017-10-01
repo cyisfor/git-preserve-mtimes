@@ -220,7 +220,6 @@ int main(int argc, char *argv[])
 			store(out, head);
 		store_index(out);
 		rename(temp,TIMES_PATH);
-		system("pwd");
 		repo_add(TIMES_PATH);
 	}
 	return 0;

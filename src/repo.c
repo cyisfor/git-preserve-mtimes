@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include "repo.h"
+#include "note.h"
 
 #include <git2/global.h>
 #include <git2/index.h>
@@ -114,10 +115,10 @@ void repo_add(const char* path) {
 	
 	// don't repo_check b/c this fails if already added
 	if(0==repo_carp(git_index_add_bypath(idx, path))) {
-		printf("added path %s\n",path);
+		//INFO("added path %s\n",path);
 		git_index_write(idx);
 	} else {
-		printf("error adding path %s\n",path);
+		WARN("error adding path %s",path);
 	}
 	git_index_free(idx);
 }

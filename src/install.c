@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 	}
 
 	chdir(".git/hooks/");
-	int one(const char* dest, const char* contents, size_t clen) {
+	void one(const char* dest, const char* contents, size_t clen) {
 		// append, so we don't squash other pre-commit scripts
 		// note: this fails hard if pre-commit is an executable
 		// TODO: rename pre-commit to old-pre-commit, and have pre-commit exec it
@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
 		if(out<0) {
 			WARN("couldn't create %s",dest);
 			perror("errno");
+			return;
 		}
 		ensure_eq(hlen, write(out,here,hlen));
 		ensure_eq(clen, write(out,contents,clen));

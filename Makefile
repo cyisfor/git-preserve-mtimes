@@ -17,7 +17,7 @@ O=$(patsubst %,o/%.o,$N) \
 $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
 
-N=install
+N=install note
 installer: $O
 	$(LINK)
 

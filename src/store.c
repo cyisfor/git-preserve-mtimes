@@ -157,7 +157,9 @@ void store(int out, git_tree* tree) {
 		}
 	}
 	free(tstack);
-	{
+}
+
+void store_index(int out) {
 		enum operation op = ENTRY;
 		git_index* index;
 		git_repository_index(&index, repo);
@@ -186,16 +188,20 @@ int main(int argc, char *argv[])
 {
 	repo_discover_init(".",1);
 	// traverse head, storing mtimes in .git_times, adding .git_times to the repo
-	git_tree* head;
+	git_tree* head = NULL;
 	{
 		// since HEAD
 		git_reference* ref;
-		repo_check(git_repository_head(&ref, repo)); // this resolves th
-		const git_oid * oid = git_reference_target(ref);
-		git_commit* commit;
-		repo_check(git_commit_lookup(&commit, repo, oid));
-		repo_check(git_commit_tree(&head,commit));
-		git_commit_free(commit);
+		int res = git_repository_head(&ref, repo); // this resolves
+		if(res == GIT_OK) {
+			const git_oid * oid = git_reference_target(ref);
+			git_commit* commit;
+			repo_check(git_commit_lookup(&commit, repo, oid));
+			repo_check(git_commit_tree(&head,commit));
+			git_commit_free(commit);
+		}
+		// otherwise there is no head (initial commit)
+		// only index
 	}
 
 	char temp[] = ".tmpXXXXXX";
@@ -206,7 +212,9 @@ int main(int argc, char *argv[])
 		abort();
 	} else {
 		ensure_ge(out,0);
-		store(out, head);
+		if(head)
+			store(out, head);
+		store_index(out);
 		rename(temp,TIMES_PATH);
 		system("pwd");
 		repo_add(TIMES_PATH);

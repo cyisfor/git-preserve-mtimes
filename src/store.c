@@ -125,7 +125,7 @@ void store(int out, git_tree* tree) {
 			if(rootlen > 0) --rootlen; // eat /
 			git_tree_free(ts->tree);
 			// this is the only place it could break out of the loop.
-			INFO("ascending");
+			//INFO("ascending");
 			ensure_gt(--nstack, 0);
 			chdir("..");
 			continue;
@@ -160,7 +160,7 @@ void store(int out, git_tree* tree) {
 			tstack[nstack].pos = 0;
 			tstack[nstack].nlen = name.l;
 			extend_root(name);
-			INFO("descending");
+			//INFO("descending");
 			ensure0(chdir(name.s));
 			++nstack;
 		}

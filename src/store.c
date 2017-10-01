@@ -32,7 +32,7 @@ struct treestack {
 
 bool dirty = false;
 
-static void write_entry(int out, const string name, struct operation op) {
+static void write_entry(int out, const string name, enum operation op) {
 	struct stat info;
 	if(0 != stat(name.s,&info)) {
 		//INFO("deleted %.*s",name.l,name.s);
@@ -226,8 +226,13 @@ int main(int argc, char *argv[])
 		if(head)
 			store(out, head);
 		store_index(out);
-		rename(temp,TIMES_PATH);
-		repo_add(TIMES_PATH);
+		if(dirty) {
+			rename(temp,TIMES_PATH);
+			repo_add(TIMES_PATH);
+		} else {
+			unlink(temp);
+		}
+		close(out);
 	}
 	return 0;
 }

@@ -7,7 +7,7 @@ export PKG_CONFIG_PATH
 CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-config --cflags $(P))) -I.
 LDLIBS+=$(shell pkg-config --libs $(P))
 
-all: hook-store hook-restore installer
+all: store restore installer
 
 LINK=$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 COMPILE=$(CC) $(CFLAGS) -MMD -MT $@ -c -o $@ $<

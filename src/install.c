@@ -3,6 +3,8 @@
 #include "mystring.h"
 #include "ensure.h"
 
+#include <sys/stat.h> // chmod
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h> // chdir, write etc
@@ -24,18 +26,18 @@ int main(int argc, char *argv[])
 
 	chdir(".git/hooks/");
 	int one(const char* dest, const char* contents, size_t clen) {
-		char temp[] = ".tmpXXXXXX";
-		int out = mkstemp(temp);
+		// append, so we don't squash other pre-commit scripts
+		// note: this fails hard if pre-commit is an executable
+		// TODO: rename pre-commit to old-pre-commit, and have pre-commit exec it
+		// but how to stop from wrapping our pre-commit, that wraps another pre-commit?
+		int out = open(dest,O_APPEND|O_CREAT|O_WRONLY,0755);
 		assert(out >= 0);
-		write(out,here,hlen);
-		write(out,contents,clen);
-
-		ensure0(rename(temp,dest));
+		ensure_eq(hlen, write(out,here,hlen));
+		ensure_eq(clen, write(out,contents,clen));
 		close(out);
 	}
 	one("pre-commit",LITLEN("store\n"));
 	one("post-checkout",LITLEN("restore\n"));
-
 	symlink("post-checkout","post-merge");
 	symlink("post-checkout","post-rewrite");
 	symlink("post-checkout","post-reset");

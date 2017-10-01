@@ -187,7 +187,6 @@ void store_index(int out) {
 
 int main(int argc, char *argv[])
 {
-	system("set");
 	seen_paths = strings_new();
 	repo_discover_init(".",1);
 	// traverse head, storing mtimes in .git_times, adding .git_times to the repo

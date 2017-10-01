@@ -89,14 +89,19 @@ size_t repo_relative(char** path, size_t plen) {
 	return plen - len;
 }
 
-void repo_check(git_error_code e) {
-	if(e == 0) return;
+int repo_carp(int e) {
+	if(e==0) return e;
 	const git_error* err = giterr_last();
 	if(err != NULL) {
 		fprintf(stderr,"GIT ERROR: %s\n",err->message);
 		giterr_clear();
 	}
+	return e;
+}
 
+void repo_check(git_error_code e) {
+	if(e==0) return;
+	repo_carp(e);
 	exit(e);
 }
 
@@ -107,7 +112,7 @@ void repo_add(const char* path) {
 	assert(path);
 	
 	// don't repo_check b/c this fails if already added
-	if(0 == git_index_add_bypath(idx, path)) {
+	if(repo_carp(git_index_add_bypath(idx, path))) {
 		printf("added path %s\n",path);
 		git_index_write(idx);
 	} else {
@@ -118,10 +123,11 @@ void repo_add(const char* path) {
 
 git_index* repo_index(void) {
 	git_index* ret = NULL;
+	system("ls -l .git/index*");
 	if(getenv("GIT_INDEX_FILE")) {
 		// NOT git_repository_index
 		// during a hook, that is NOT the index.
-		repo_check(git_index_open(&ret,getenv("GIT_INDEX_FILE")))
+		repo_check(git_index_open(&ret,getenv("GIT_INDEX_FILE")));
 	} else {
 		repo_check(git_repository_index(&ret, repo));
 	}

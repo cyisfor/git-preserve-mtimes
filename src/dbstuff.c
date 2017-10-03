@@ -1,6 +1,9 @@
+#include "itoa.h"
 #include "dbstuff.h"
 #include <stdlib.h> // NULL
+#include <string.h>
 
+#define LITLEN(a) a,(sizeof(a)-1)
 
 /* hokay, so strategy...
 	annoying as **** to try and merge index and working tree, so let sqlite figure it out.
@@ -25,11 +28,13 @@
 
 #define STEP(a) db_check(sqlite3_step(a))
 
+#define PREPARE(b,a) sqlite3_prepare(db,a,sizeof(a)-1,&b,NULL)
+
 identifier add(identifier parent,
 							const char* name, int len, struct timespec mtime) {
 	BIND(text)(add_find, 1, name, len, NULL);
 	BIND(int64)(add_find, 2, parent);
-	int res = STEP(find);
+	int res = STEP(add_find);
 	if(res == SQLITE_ROW) {
 		identifier ret = sqlite3_column_int64(add_find, 0);
 		sqlite3_reset(add_find);
@@ -38,7 +43,7 @@ identifier add(identifier parent,
 		
 	sqlite3_reset(add_find);
 	BIND(text)(add_insert, 1, name, len, NULL);
-	BIND(int64)(add_insert, 2, identifier);
+	BIND(int64)(add_insert, 2, parent);
 	BIND(int64)(add_insert, 3, mtime.tv_sec);
 	BIND(int64)(add_insert, 4, mtime.tv_nsec);
 	STEP(add_insert);
@@ -50,8 +55,11 @@ identifier add(identifier parent,
 sqlite3_stmt* children(identifier parent) {
 	// this must be reentrant! we will call children, before resetting children, when recursing!
 	sqlite3_stmt* stmt;
-	char buf[0x100];
-	snprintf(buf,0x100,"CREATE TEMPORARY TABLE IF NOT EXISTS children%d AS SELECT id,isdir,name,modified,modifiedns FROM entries WHERE parent = ?", parent);
+#define PREFIX "CREATE TEMPORARY TABLE IF NOT EXISTS children"
+	char buf[0x100] = PREFIX;
+	size_t end = sizeof(PREFIX)-1 +
+		itoa(buf,0x100-sizeof(PREFIX)+1, parent);
+	memcpy(buf+end,LITLEN(" AS SELECT id,isdir,name,modified,modifiedns FROM entries WHERE parent = ?"));
 	PREPARE(stmt,buf);
 	BIND(int64)(stmt,1,parent);
 	STEP(stmt); // if not created, then okay.

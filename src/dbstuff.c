@@ -56,6 +56,7 @@ bool dbstuff_has_seen(identifier me) {
 	if(res == SQLITE_ROW) return true;
 	BIND(int64)(see_entry,1,me);
 	STEP(see_entry);
+	sqlite3_reset(see_entry);
 	return false;
 }
 

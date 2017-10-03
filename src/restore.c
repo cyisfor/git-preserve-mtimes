@@ -1,53 +1,47 @@
 #define _GNU_SOURCE // utimensat, AT_FDCWD
 #include "hook-common.h"
-
+#include "dbstuff.h"
 #include "note.h"
 #include "ensure.h"
 #include "mystring.h"
-#include "smallstring.h"
 
 #include <fcntl.h> // AT_FDCWD
 #include <sys/stat.h> // utimensat, mkdir
 #include <unistd.h> // chdir
 
-struct entry {
-	string name;
-	struct timespec mtime;
-};
-
-static void read_entry(struct entry* ret, int inp) {
-	smallstring_read(&ret->name, inp);
-	read(inp,&ret->mtime,sizeof(ret->mtime));
-}
-
-static void restore_mtime(struct entry e) {
+static void restore_mtime(const char* name, struct timespec mtime) {
 	// assume we're in the right directory
 	struct timespec times[2] = {
-		e.mtime, // meh to atime
-		e.mtime
+		mtime, // meh to atime
+		mtime
 	};
 	//INFO("T %d",e.mtime.tv_sec);
-	utimensat(AT_FDCWD, e.name.s, times, 0);
+	utimensat(AT_FDCWD, name, times, 0);
 }
 
-void restore(int inp) {
-	enum operation op;
-	struct entry e = {};
-	for(;;) {
-		ssize_t amt = read(inp,&op,sizeof(op));
-		if(amt == 0) break;
-		ensure_eq(sizeof(op),amt);
-		switch(op) {
-		case ASCEND:
-			INFO("UP");
-			return;
-		case DESCEND: {
-			INFO("DOWN");
-			read_entry(&e, inp);
-			INFO("name %.*s",e.name.l,e.name.s);
-			mkdir(e.name.s,0755);
-			ensure0(chdir(e.name.s));
-			restore(inp);
+void restore() {
+	void down(int parent) {
+		sqlite3_stmt* children = dbstuff_children(parent);
+		for(;;) {
+			if(STEP(children) == SQLITE_DONE) break;
+			const char* name = sqlite3_column_text(children,2);
+			if(sqlite3_column_int(children,1) != 0) {
+				//isdir
+				ensure0(chdir(name));
+				down(sqlite3_column_int64(children,0));
+				ensure0(chdir(".."));
+			}
+			struct timespec mtime = {
+				sqlite3_column_int64(children,3),
+				sqlite3_column_int64(children,4)
+			};
+			restore_mtime(name,mtime);
+		}
+		sqlite3_reset(children);
+	}
+	down(0);
+	
+				restore(inp);
 			ensure0(chdir(".."));
 			// do this AFTER restoring its contents
 			restore_mtime(e);

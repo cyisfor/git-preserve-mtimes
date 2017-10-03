@@ -31,15 +31,22 @@ struct treestack {
 
 bool dirty = false;
 
-static identifier write_entry(identifier parent, const string name, bool istree) {
+static identifier write_entry(identifier me,
+															identifier parent, const string name, bool istree) {
 	struct stat info;
 	if(0 != stat(name.s,&info)) {
 		//INFO("deleted %.*s",name.l,name.s);
 		// allow this marked as "seen" since we don't need to save it at all.
 		return -1;
 	}
-	dirty = true;
-	return dbstuff_add(parent,name.s,name.l,istree, info.st_mtim);
+	if(me == -1) {
+		dirty = true;
+		me = dbstuff_add(parent,name.s,name.l,istree, info.st_mtim);
+	} else {
+		dbstuff_update(me, istree, info.st_mtim);
+		dirty = sqlite3_changes(db) > 0;
+	}
+	return me;
 }
 
 /* this is stupidified because libgit2 hides its interface too well.
@@ -61,6 +68,8 @@ void store_tree(identifier parent, git_tree* tree) {
 			return;
 		}
 
+		identifier me = dbstuff_find(parent,name,len);
+		
 		string name;
 		{
 			name.s = git_tree_entry_name(entry);
@@ -70,14 +79,14 @@ void store_tree(identifier parent, git_tree* tree) {
 				 0 == memcmp(name.s, TIMES_PATH, name.l))
 				continue;
 
-			if(dbstuff_has(parent, name.s, name.l)) {
+			if(me != -1 && dbstuff_has_seen(me)) {
 				continue;
 			}
 		}
 
 		int type = git_tree_entry_type(entry);
 		bool istree = (type == GIT_OBJ_TREE);
-		identifier me = write_entry(parent, name, istree);
+		me = write_entry(me, parent, name, istree);
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
 			git_tree* tree;

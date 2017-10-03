@@ -46,7 +46,7 @@ void db_init(const char* name) {
 	PREPARE(commit,"COMMIT");
 #include "db.sql.gen.c"
 	db_begin();
-	sqlite3_exec(db, db_sql, errorderp, NULL, NULL);
+	db_check(sqlite3_exec(db, db_sql, errorderp, NULL, NULL));
 	db_commit();
 }
 
@@ -73,8 +73,8 @@ void db_close_and_exit(int code) {
 	if(tlevel > 0) {
 		db_check(sqlite3_step(commit));
 	}
-	sqlite3_finalize(begin);
-	sqlite3_finalize(commit);
+	db_check(sqlite3_finalize(begin));
+	db_check(sqlite3_finalize(commit));
 	db_check(sqlite3_close(db));
 	exit(code);
 }

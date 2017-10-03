@@ -31,7 +31,7 @@ struct treestack {
 
 bool dirty = false;
 
-static identifier write_entry(int out, identifier parent, const string name, bool istree) {
+static identifier write_entry(identifier parent, const string name, bool istree) {
 	struct stat info;
 	if(0 != stat(name.s,&info)) {
 		//INFO("deleted %.*s",name.l,name.s);
@@ -50,7 +50,7 @@ static identifier write_entry(int out, identifier parent, const string name, boo
 	 into it. But every tree below it, we can just walk like a normal tree.
 */
 
-void store_tree(int out, identifier parent, git_tree* tree) {
+void store_tree(identifier parent, git_tree* tree) {
 	int pos;
 	int num = git_tree_entrycount(tree);
 	db_begin();
@@ -77,20 +77,20 @@ void store_tree(int out, identifier parent, git_tree* tree) {
 
 		int type = git_tree_entry_type(entry);
 		bool istree = (type == GIT_OBJ_TREE);
-		identifier me = write_entry(out, parent, name, istree);
+		identifier me = write_entry(parent, name, istree);
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
 			git_tree* tree;
 			repo_check(git_tree_lookup(&tree, repo, oid));
 			chdir(name.s);
-			store_tree(out, me, tree);
+			store_tree(me, tree);
 			chdir("..");
 			git_tree_free(tree);
 		}
 	}
 }
 
-void store_index(int out) {
+void store_index() {
 	git_index* index = NULL;
 	repo_check(git_repository_index(&index, repo));
 	//INFO("index %s",git_index_path(index));
@@ -125,7 +125,7 @@ void store_index(int out) {
 			if(dbstuff_has(parent, name.s, name.l)) {
 				return;
 			}
-			identifier me = write_entry(out, parent, name, istree);
+			identifier me = write_entry(parent, name, istree);
 			if(istree) {
 				onelevel(me, path+clen+1, len-clen-1);
 			}
@@ -161,24 +161,15 @@ int main(int argc, char *argv[])
 		// only index
 	}
 
-	char temp[] = ".tmpXXXXXX";
-
-	int out = mkstemp(temp);
 	if(note_catch()) {
-		unlink(temp);
 		abort();
 	} else {
-		ensure_ge(out,0);
 		if(head)
-			store_tree(out, 0, head);
-		store_index(out);
+			store_tree(0, head);
+		store_index();
 		if(dirty) {
-			rename(temp,TIMES_PATH);
 			repo_add(TIMES_PATH);
-		} else {
-			unlink(temp);
-		}
-		close(out);
+		} 
 	}
 	dbstuff_close_and_exit(0);
 	return 0;

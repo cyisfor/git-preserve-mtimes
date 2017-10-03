@@ -6,12 +6,13 @@
 
 typedef sqlite_int64 identifier;
 
-bool dbstuff_has(identifier parent,
-							const char* name, int len);
+bool dbstuff_has_seen(identifier me);
 
 identifier dbstuff_find(identifier parent,
-												const char* name, int len,
-												bool isdir, struct timespec mtime);
+							const char* name, int len);
+
+identifier dbstuff_update(identifier me,
+													bool isdir, struct timespec mtime);
 
 identifier dbstuff_add(identifier parent,
 							const char* name, int len, bool isdir, struct timespec mtime);

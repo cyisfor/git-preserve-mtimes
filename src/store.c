@@ -68,7 +68,7 @@ void store_tree(identifier parent, git_tree* tree) {
 			return;
 		}
 
-		identifier me = dbstuff_find(parent,name,len);
+		identifier me;
 		
 		string name;
 		{
@@ -79,6 +79,7 @@ void store_tree(identifier parent, git_tree* tree) {
 				 0 == memcmp(name.s, TIMES_PATH, name.l))
 				continue;
 
+			me = dbstuff_find(parent,name.s,name.l);
 			if(me != -1 && dbstuff_has_seen(me)) {
 				continue;
 			}
@@ -131,10 +132,11 @@ void store_index(void) {
 			if(name.l == (sizeof(TIMES_PATH)-1) &&
 				 0 == memcmp(name.s, TIMES_PATH, name.l))
 				return;
-			if(dbstuff_has(parent, name.s, name.l)) {
+			identifier me = dbstuff_find(parent,name.s,name.l);
+			if(dbstuff_has_seen(me)) {
 				return;
 			}
-			identifier me = write_entry(parent, name, istree);
+			me = write_entry(me, parent, name, istree);
 			if(istree) {
 				onelevel(me, path+clen+1, len-clen-1);
 			}

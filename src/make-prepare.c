@@ -1,13 +1,18 @@
 #define _GNU_SOURCE
 
+#include "itoa.h"
 #include "db.h"
+#include "ensure.h"
+
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 #include <unistd.h>
-#include <sys/mman.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h> // write
 
+#define LITLEN(a) a,(sizeof(a)-1)
 #define PUTLIT(a) write(1,a,sizeof(a)-1)
 #define PUTS(a,len) write(1,a,len)
 
@@ -83,7 +88,7 @@ int main(int argc, char *argv[])
 		}
 		const char* nl = memchr(mem+startname, '\n', info.st_size-startname);
 		if(nl == NULL) {
-			puts("junk at the end? Should be a statement following the name!");
+			write(2,LITLEN("junk at the end? Should be a statement following the name!\n"));
 			return 1;
 		}
 		size_t startstmt = nl - mem + 1;
@@ -139,12 +144,12 @@ int main(int argc, char *argv[])
 	// 	db_check(sqlite3_prepare(db,%2$,%3$, &%1$, NULL));
 	for(i=0;i<nentries;++i) {
 		PUTLIT("\tdb_check(sqlite3_prepare(db,");
-		PUTS(entries[i].stmt,entries[i].stmtlen); // includes "'s
+		PUTS(mem + entries[i].stmt,entries[i].stmtlen); // includes "'s
 		PUTLIT(", ");
 		char buf[0x100];
-		PUTS(buf,	atoi(buf,0x100,entries[i].unescapedstmtlen)); 
+		PUTS(buf,	itoa(buf,0x100,entries[i].unescapedstmtlen)); 
 		PUTLIT(", &");
-		PUTS(entries[i].name, entries[i].namelen);
+		PUTS(mem + entries[i].name, entries[i].namelen);
 		PUTLIT(", NULL);\n");
 	}
 	PUTLIT("}\n\n");
@@ -152,7 +157,7 @@ int main(int argc, char *argv[])
 	PUTLIT("void prepare_finalize(void) {\n");
 	for(i=0;i<nentries;++i) {
 		PUTLIT("\tdb_check(sqlite3_finalize(");
-		PUTS(entries[i].name, entries[i].namelen);
+		PUTS(mem + entries[i].name, entries[i].namelen);
 		PUTLIT(");\n");
 	}
 	PUTLIT("}\n");

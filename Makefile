@@ -4,7 +4,7 @@ P=libgit2 sqlite3
 PKG_CONFIG_PATH:=/custom/libgit2/lib/pkgconfig
 export PKG_CONFIG_PATH
 
-CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-config --cflags $(P))) -I.
+CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-config --cflags $(P))) -I. -Io
 CFLAGS+=-fshort-enums
 LDLIBS+=$(shell pkg-config --libs $(P))
 
@@ -18,9 +18,13 @@ O=$(patsubst %,o/%.o,$N) \
 $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
 
-N=make-prepare db itoa
+N=make-prepare db itoa db.sql.gen
 make-prepare: $O
 	$(LINK)
+
+o/db.sql.gen.c: src/db.sql data_to_header_string/pack
+	name=db_sql ./data_to_header_string/pack <src/db.sql > $@.temp
+	mv $@.temp $@
 
 N=install note
 installer: $O

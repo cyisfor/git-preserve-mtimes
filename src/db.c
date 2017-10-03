@@ -1,4 +1,7 @@
 #include "db.h"
+#include <stdlib.h> // NULL
+#include <unistd.h> // write
+#define LITLEN(a) a,(sizeof(a)-1)
 
 sqlite3* db = NULL;
 

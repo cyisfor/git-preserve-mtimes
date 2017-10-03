@@ -62,7 +62,7 @@ char* escape(size_t* rlen, const char* s, size_t len) {
 struct entries {
 	size_t name;
 	size_t namelen;
-	size_t stmt;
+	char* stmt;
 	size_t stmtlen;
 	size_t unescapedstmtlen;
 };
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 	// 	db_check(sqlite3_prepare(db,%2$,%3$, &%1$, NULL));
 	for(i=0;i<nentries;++i) {
 		PUTLIT("\tdb_check(sqlite3_prepare(db,");
-		PUTS(mem + entries[i].stmt,entries[i].stmtlen); // includes "'s
+		PUTS(entries[i].stmt,entries[i].stmtlen); // includes "'s
 		PUTLIT(", ");
 		char buf[0x100];
 		PUTS(buf,	itoa(buf,0x100,entries[i].unescapedstmtlen)); 

@@ -39,7 +39,7 @@ N=install note
 installer: $O
 	$(LINK)
 
-N=store repo note smallstring dbstuff db
+N=store repo note smallstring dbstuff db itoa
 store: $O intern/libintern.a
 	$(LINK)
 

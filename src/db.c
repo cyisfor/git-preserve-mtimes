@@ -1,3 +1,4 @@
+#include "ensure.h"
 #include "db.h"
 #include <stdlib.h> // NULL
 #include <unistd.h> // write
@@ -25,9 +26,19 @@ int db_check(int code) {
 	return code;
 }
 
+static
+int errorderp(void* udata, int args, char**argv, char** colname) {
+	int i;
+	for(i=0;i<args;++i) {
+		write(2,argv[i],strlen(argv[i]));
+		write(2,LITLEN("\n"));
+	}
+	abort();
+}
+
 void db_init(const char* name) {
 	db_check(sqlite3_open(name, &db));
 	
 #include "db.sql.gen.c"
-	db_check(sqlite3_exec(db, db_sql, NULL, NULL, NULL));
+	sqlite3_exec(db, db_sql, errorderp, NULL, NULL);
 }

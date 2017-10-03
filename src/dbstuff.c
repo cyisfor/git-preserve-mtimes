@@ -41,8 +41,13 @@ identifier dbstuff_add(identifier parent,
 	return sqlite3_last_insert_rowid(db);
 }
 
+bool dbstuff_has(identifier parent,
+							const char* name, int len) {
+	return -1 == dbstuff_find(parent, name,len);
+}
+
 identifier dbstuff_find(identifier parent,
-							const char* name, int len, struct timespec mtime) {
+							const char* name, int len) {
 	BIND(text)(add_find, 1, name, len, NULL);
 	BIND(int64)(add_find, 2, parent);
 	int res = STEP(add_find);

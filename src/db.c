@@ -40,6 +40,8 @@ int errorderp(void* udata, int args, char**argv, char** colname) {
 
 void db_init(const char* name) {
 	db_check(sqlite3_open(name, &db));
+	db_check(sqlite3_extended_result_codes(db,1));
+
 	PREPARE(begin,"BEGIN");
 	PREPARE(commit,"COMMIT");
 #include "db.sql.gen.c"
@@ -66,4 +68,11 @@ void db_commit(void) {
 		// ugh
 		sqlite3_reset(commit);
 	}
+}
+
+void db_close_and_exit(int code) {
+	sqlite3_finalize(begin);
+	sqlite3_finalize(commit);
+	prepare_finalize();
+	db_check(sqlite3_close(db));
 }

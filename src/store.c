@@ -19,7 +19,7 @@
 
 #include <sys/stat.h>
 
-/* we have to write our own walk, because git_tree_walk doesn't let us know
+/* we havex to write our own walk, because git_tree_walk doesn't let us know
 	 whether we're starting a new root, or ending one.
 */
 
@@ -180,5 +180,6 @@ int main(int argc, char *argv[])
 		}
 		close(out);
 	}
+	db_close_and_exit(0);
 	return 0;
 }

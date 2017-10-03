@@ -110,8 +110,8 @@ int main(int argc, char *argv[])
 
 		const char* tail = NULL;
 		sqlite3_stmt* dummy;
-		db_check(sqlite3_prepare(db, mem+startstmt, info.st_size - startstmt,
-														 &dummy, &tail));
+		db_check(sqlite3_prepare_v2(db, mem+startstmt, info.st_size - startstmt,
+																&dummy, &tail));
 		size_t endstmt = tail - mem;
 		// we need to iterate 3 times over these, so just save offsets
 
@@ -168,9 +168,9 @@ int main(int argc, char *argv[])
 	}
 	PUTLIT("\nvoid prepare_init(void) {\n");
 
-	// 	db_check(sqlite3_prepare(db,%2$,%3$, &%1$, NULL));
+	// 	db_check(sqlite3_prepare_v2(db,%2$,%3$, &%1$, NULL));
 	for(i=0;i<nentries;++i) {
-		PUTLIT("\tdb_check(sqlite3_prepare(db,");
+		PUTLIT("\tdb_check(sqlite3_prepare_v2(db,");
 		PUTS(entries[i].stmt,entries[i].stmtlen); // includes "'s
 		PUTLIT(", ");
 		char buf[0x100];

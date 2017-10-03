@@ -11,6 +11,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h> // write
+#include <fcntl.h> // open
+#include <assert.h> // 
+#include <stdio.h> // rename
 
 #define LITLEN(a) a,(sizeof(a)-1)
 #define PUTLIT(a) write(out,a,sizeof(a)-1)
@@ -69,6 +72,8 @@ struct entries {
 
 int main(int argc, char *argv[])
 {
+	assert(argc == 2);
+	char* target = argv[1];
 	db_init(":memory:");
 	struct stat info;
 	ensure0(fstat(0,&info)); // stdin better be a file.
@@ -136,9 +141,10 @@ int main(int argc, char *argv[])
 	derp();
 
 	// now some C
+	int i;
 
 	int out = open("temp",O_WRONLY|O_CREAT|O_TRUNC,0644);
-
+	// extern sqlite3_stmt* name;
 	for(i=0;i<nentries;++i) {
 		PUTLIT("extern sqlite3_stmt* ");
 		PUTS(mem + entries[i].name, entries[i].namelen);
@@ -148,14 +154,13 @@ int main(int argc, char *argv[])
 	PUTLIT("void prepare_finalize(void);\n");
 
 	close(out);
-	rename(out,target);
+	rename("temp",target);
 	target[strlen(target)-1] = 'c'; // .h -> .c
 
 	out = open("temp",O_WRONLY|O_CREAT|O_TRUNC,0644);
 
 	
 	// sqlite3_stmt* name;
-	int i;
 	for(i=0;i<nentries;++i) {
 		PUTLIT("sqlite3_stmt* ");
 		PUTS(mem + entries[i].name, entries[i].namelen);
@@ -183,5 +188,7 @@ int main(int argc, char *argv[])
 		PUTLIT("));\n");
 	}
 	PUTLIT("}\n");
+	close(out);
+	rename("temp",target);
 	return 0;
 }

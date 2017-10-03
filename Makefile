@@ -24,9 +24,8 @@ make-prepare: $O
 
 targets:=$(targets) dbstuff
 
-prepare.gen.c o/prepare.gen.c: make-prepare src/prepare.sql | o
-	./make-prepare <src/prepare.sql > $@.temp
-	mv $@.temp $@
+prepare.gen.h prepare.gen.c o/prepare.gen.c o/prepare.gen.h: make-prepare src/prepare.sql | o
+	./make-prepare o/prepare.gen.h < src/prepare.sql
 
 o/db.sql.gen.c: src/db.sql data_to_header_string/pack
 	name=db_sql ./data_to_header_string/pack <src/db.sql > $@.temp

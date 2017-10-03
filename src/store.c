@@ -1,6 +1,6 @@
 #define _GNU_SOURCE // st_mtim
 
-#include "prepare.h"
+#include "prepare.gen.h"
 #include "hook-common.h"
 #include "dbstuff.h"
 #include "ensure.h"

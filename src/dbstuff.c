@@ -65,7 +65,9 @@ sqlite3_stmt* children(identifier parent) {
 	STEP(stmt); // if not created, then okay.
 	sqlite3_finalize(stmt);
 	// now get results
-	snprintf(buf,0x100,"SELECT * FROM children%d",parent);
+	memcpy(buf,LITLEN("SELECT * FROM children"));
+	itoa(buf+sizeof("SELECT * FROM children")-1,0x100-sizeof("SELECT * FROM children")+1,
+			 parent);
 	PREPARE(stmt,buf);
 	return stmt;
 }

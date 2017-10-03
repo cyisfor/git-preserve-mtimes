@@ -82,18 +82,22 @@ sqlite3_stmt* dbstuff_children(identifier parent) {
 #define PREFIX "CREATE TEMPORARY TABLE IF NOT EXISTS children"
 	char buf[0x100] = PREFIX;
 	size_t end = sizeof(PREFIX)-1 +
-		itoa(buf,0x100-sizeof(PREFIX)+1, parent);
+		itoa(buf+sizeof(PREFIX)-1,0x100-sizeof(PREFIX)+1, parent);
 	memcpy(buf+end,LITLEN(" AS SELECT id,isdir,name,modified,modifiedns FROM entries WHERE parent = ?"));
 	PREPARE(stmt,buf);
 	BIND(int64)(stmt,1,parent);
 	STEP(stmt); // if not created, then okay.
 	sqlite3_finalize(stmt);
 	// now get results
-	memcpy(buf,LITLEN("SELECT * FROM children"));
-	itoa(buf+sizeof("SELECT * FROM children")-1,0x100-sizeof("SELECT * FROM children")+1,
-			 parent);
+#undef PREFIX
+#define PREFIX "SELECT * FROM children"
+	memcpy(buf,LITLEN(PREFIX));
+	end = sizeof(PREFIX)-1 +
+		itoa(buf+sizeof(PREFIX)-1,0x100-sizeof(PREFIX)+1,parent);
+	buf[end] = '\0';
 	PREPARE(stmt,buf);
 	return stmt;
+#undef PREFIX
 }
 
 // note: children(0) -> topmost entries

@@ -40,29 +40,12 @@ void restore() {
 		sqlite3_reset(children);
 	}
 	down(0);
-	
-				restore(inp);
-			ensure0(chdir(".."));
-			// do this AFTER restoring its contents
-			restore_mtime(e);
-			return;
-		}
-		case ENTRY: {
-			read_entry(&e, inp);
-			//INFO("ent %.*s",e.name.l,e.name.s);
-			restore_mtime(e);
-		}
-		};
-	}
 }
 
 int main(int argc, char *argv[])
 {
 	note_init();
-	int inp = open(TIMES_PATH,O_RDONLY);
-	if(inp < 0) return 1; // aww, no .git_times file found...
-	restore(inp);
-	//INFO("restore staged files:");
-	restore(inp);
+	db_init(TIMES_PATH);
+	restore();
 	return 0;
 }

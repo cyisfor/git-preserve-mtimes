@@ -38,11 +38,11 @@ N=install note
 installer: $O
 	$(LINK)
 
-N=store repo note smallstring dbstuff db itoa
+N=store repo note dbstuff db itoa
 store: $O intern/libintern.a
 	$(LINK)
 
-N=restore repo note smallstring
+N=restore repo note dbstuff db itoa
 restore: $O
 	$(LINK)
 

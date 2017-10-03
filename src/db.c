@@ -1,3 +1,5 @@
+#include "db.h"
+
 sqlite3* db = NULL;
 
 int db_check(int code) {

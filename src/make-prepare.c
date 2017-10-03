@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h> // write
 
 #define PUTLIT(a) write(1,a,sizeof(a)-1)
 #define PUTS(a,len) write(1,a,len)
@@ -43,7 +44,7 @@ char* escape(size_t* rlen, const char* s, size_t len) {
 			break;
 		default:
 			GROW(1);
-			stmt[stmtlen++] = mem[i];
+			stmt[stmtlen++] = s[i];
 		};
 	}
 	GROW(1);

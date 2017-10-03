@@ -31,11 +31,12 @@
 #define PREPARE(b,a) sqlite3_prepare(db,a,sizeof(a)-1,&b,NULL)
 
 identifier dbstuff_add(identifier parent,
-							const char* name, int len, struct timespec mtime) {
+							const char* name, int len, bool isdir, struct timespec mtime) {
 	BIND(text)(add_insert, 1, name, len, NULL);
 	BIND(int64)(add_insert, 2, parent);
-	BIND(int64)(add_insert, 3, mtime.tv_sec);
-	BIND(int64)(add_insert, 4, mtime.tv_nsec);
+	BIND(int)(add_insert, 3, isdir ? 1 : 0);
+	BIND(int64)(add_insert, 4, mtime.tv_sec);
+	BIND(int64)(add_insert, 5, mtime.tv_nsec);
 	STEP(add_insert);
 	sqlite3_reset(add_insert);
 	return sqlite3_last_insert_rowid(db);

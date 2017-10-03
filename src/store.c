@@ -38,7 +38,7 @@ static identifier write_entry(int out, identifier parent, const string name, boo
 		return -1;
 	}
 	dirty = true;
-	return dbstuff_add(parent,name.s,name.l,info.st_mtim);
+	return dbstuff_add(parent,name.s,name.l,istree, info.st_mtim);
 }
 
 /* this is stupidified because libgit2 hides its interface too well.
@@ -65,6 +65,10 @@ void store_tree(int out, identifier parent, git_tree* tree) {
 			if(dbstuff_has(parent, name.s, name.l)) {
 				continue;
 			}
+
+			if(name.l == sizeof(TIMES_PATH) &&
+				 0 == memcmp(name.s, TIMES_PATH, name.l))
+				continue;
 		}
 
 		int type = git_tree_entry_type(entry);

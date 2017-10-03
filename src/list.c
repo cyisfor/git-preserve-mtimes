@@ -65,6 +65,22 @@ int main(int argc, char *argv[])
 {
 	note_init();
 	repo_discover_init(".",1);
+	git_revwalk_t* walk = NULL;
+	repo_check(git_revwalk_new(&walk, repo));
+	git_revwalk_push_head(walk);
+	git_oid* oid;
+	while(GIT_ITEROVER != git_revwalk_next(&oid, walk)) {
+		puts(git_oid_tostr_s(oid));
+		git_tree* tree;
+		repo_check(git_tree_lookup(&tree, repo, oid));
+
+		const git_tree_entry * entry = git_tree_entry_byname(tree, TIMES_PATH);
+		if(entry) {
+			git_blob* blob
+		} else {
+			puts("no " TIMES_PATH " found");
+		}
+}
 	int inp = open(TIMES_PATH,O_RDONLY);
 	if(inp < 0) return 1; // aww, no .git_times file found...
 	restore(inp);

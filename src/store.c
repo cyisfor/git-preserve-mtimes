@@ -32,7 +32,7 @@ struct treestack {
 
 bool dirty = false;
 
-static void write_entry(int out, const string name, enum operation op) {
+static void write_entry(int out, const string name, bool istree) {
 	struct stat info;
 	if(0 != stat(name.s,&info)) {
 		//INFO("deleted %.*s",name.l,name.s);
@@ -40,6 +40,11 @@ static void write_entry(int out, const string name, enum operation op) {
 		return;
 	}
 
+	if(istree) {
+		op = DESCEND;
+	} else {
+		op = ENTRY;
+	}
 	dirty = true;
 	write(out,&op,sizeof(op));
 	smallstring_write(out, name.s, name.l);
@@ -96,7 +101,16 @@ void extend_root(string name) {
 	// no need for \0 terminator yet
 }
 
-void store(int out, git_tree* tree) {
+
+/* this is stupidified because libgit2 hides its interface too well.
+	 since we can't walk a treebuilder, to walk the trees in it, without
+	 recursion, 
+	 tree/treebuilder have different interfaces
+	 so the topmost tree has to be a treebuilder, since we merged the index
+	 into it. But every tree below it, we can just walk like a normal tree.
+*/
+
+void store_tree(int out, git_tree* tree) {
 	// normal recursion will stack up the oid, count, i, istree, etc.
 	struct treestack* tstack = malloc(sizeof(*tstack) << 2);
 	int nstack = 1;
@@ -104,7 +118,7 @@ void store(int out, git_tree* tree) {
 	tstack[0].tree = tree;
 	tstack[0].pos = 0;
 	tstack[0].nlen = 0;
-		
+
 	for(;;) {
 		enum operation op;
 		struct treestack* ts = &tstack[nstack-1];
@@ -142,12 +156,7 @@ void store(int out, git_tree* tree) {
 
 		int type = git_tree_entry_type(entry);
 		bool istree = (type == GIT_OBJ_TREE);
-		if(istree) {
-			op = DESCEND;
-		} else {
-			op = ENTRY;
-		}
-		write_entry(out, name,op);
+		write_entry(out, name, istree);
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
 			git_tree* tree;
@@ -168,8 +177,30 @@ void store(int out, git_tree* tree) {
 	free(tstack);
 }
 
-void store_index(int out) {
-	enum operation op = ENTRY;
+static
+int visit_builder(const git_tree_entry *entry, void *payload) {
+	int out = (int) (intptr_t) payload;
+	int type = git_tree_entry_type(entry);
+	bool istree = (type == GIT_OBJ_TREE);
+	if(istree) {
+		ensure0(chdir(name));
+		store_tree(out,tree);
+		op = ASCEND;
+		write(out,&op,sizeof(op));
+		ensure0(chdir(".."));
+	} else {
+		write_entry(out, name, false);
+	}
+}
+
+void store(int out, git_treebuilder* builder) {
+	git_treebuilder_filter(builder, visit_builder, out);
+}
+
+void merge_index(git_tree* tree, int out) {
+	git_tree_builder* b;
+	repo_check(git_treebuilder_new(&b, repo, tree));
+
 	git_index* index = NULL;
 	repo_check(git_repository_index(&index, repo));
 	//INFO("index %s",git_index_path(index));
@@ -178,20 +209,12 @@ void store_index(int out) {
 	for(i=0;i<count;++i) {
 		const git_index_entry * entry = git_index_get_byindex(index,i);
 		ensure_ne(entry,NULL);
-		string path = {
-			.s = entry->path,
-			.l = strlen(entry->path)
-		};
-		if(has_seen(path)) {
-			continue;
-		}
-		// path has / in it, but there's no requirement for entries not to.
-		write_entry(out,path,op);
+
+		repo_check(git_treebuilder_insert(NULL, b, entry->path, entry->id, entry->mode));
 	}
+	git_treebuilder_free(b);
 	git_index_free(index);
 }
-
-
 
 int main(int argc, char *argv[])
 {

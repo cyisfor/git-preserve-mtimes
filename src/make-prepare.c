@@ -121,6 +121,7 @@ int main(int argc, char *argv[])
 		// parse the statement to remove weird characters
 
 		startname = endstmt;
+		--endstmt; // after semicolon
 		--endstmt; // semicolon
 		while(endstmt > startstmt && isspace(mem[endstmt])) --endstmt;
 

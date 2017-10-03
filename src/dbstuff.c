@@ -1,3 +1,5 @@
+#include "db.h"
+
 /* hokay, so strategy...
 	annoying as **** to try and merge index and working tree, so let sqlite figure it out.
 

@@ -22,9 +22,16 @@ N=make-prepare db itoa db.sql.gen note
 make-prepare: $O
 	$(LINK)
 
+o/prepare.gen.c: make-prepare src/prepare.sql
+	./make-prepare <src/prepare.sql > $@.temp
+	mv $@.temp $@
+
 o/db.sql.gen.c: src/db.sql data_to_header_string/pack
 	name=db_sql ./data_to_header_string/pack <src/db.sql > $@.temp
 	mv $@.temp $@
+
+o/%.d: src/%.c
+	$(CC) $(CFLAGS) -MM -MG -MT o/$*.o -c -o $@ $<
 
 N=install note
 installer: $O

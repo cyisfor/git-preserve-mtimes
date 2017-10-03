@@ -15,37 +15,43 @@
 	
 */
 
+#include "prepare.gen.c"
+
 identifer add(identifier parent,
 							const char* name, int len, struct timespec mtime) {
-	DECLARE_STMT(find,"SELECT id FROM entries WHERE name = ? AND parent = ?)");
-	DECLARE_STMT(insert,"INSERT INTO entries (name, parent, modified, modifiedns) VALUES (?,?,?,?)");
-	BIND(text)(find, 1, name, len, NULL);
-	BIND(int64)(find, 2, parent);
+	BIND(text)(add_find, 1, name, len, NULL);
+	BIND(int64)(add_find, 2, parent);
 	int res = STEP(find);
 	if(res == SQLITE_ROW) {
-		identifier ret = sqlite3_column_int64(find, 0);
-		sqlite3_reset(find);
+		identifier ret = sqlite3_column_int64(add_find, 0);
+		sqlite3_reset(add_find);
 		return ret;
 	}
 		
-	sqlite3_reset(find);
-	BIND(text)(insert, 1, name, len, NULL);
-	BIND(int64)(insert, 2, identifier);
-	BIND(int64)(insert, 3, mtime.tv_sec);
-	BIND(int64)(insert, 4, mtime.tv_nsec);
-	STEP(insert);
+	sqlite3_reset(add_find);
+	BIND(text)(add_insert, 1, name, len, NULL);
+	BIND(int64)(add_insert, 2, identifier);
+	BIND(int64)(add_insert, 3, mtime.tv_sec);
+	BIND(int64)(add_insert, 4, mtime.tv_nsec);
+	STEP(add_insert);
 	return sqlite3_last_insert_rowid(db);
 }
 
 /* expose this, because... tail recursion gets messed up when you pass function pointers. */
 
 sqlite3_stmt* children(identifier parent) {
-	DECLARE_STMT(find,"SELECT id,isdir,name,modified,modifiedns FROM entries WHERE parent = ?");
-	BIND(int64)(find,1,parent);
-	// this is really unreentrant... can't do that.
-	return find;
+	// this must be reentrant! we will call children, before resetting children, when recursing!
+	sqlite3_stmt* stmt;
+	char buf[0x100];
+	snprintf(buf,0x100,"CREATE TEMPORARY TABLE IF NOT EXISTS children%d AS SELECT id,isdir,name,modified,modifiedns FROM entries WHERE parent = ?", parent);
+	PREPARE(stmt,buf);
+	BIND(int64)(stmt,1,parent);
+	STEP(stmt); // if not created, then okay.
+	sqlite3_finalize(stmt);
+	// now get results
+	snprintf(buf,0x100,"SELECT * FROM children%d",parent);
+	PREPARE(stmt,buf);
+	return stmt;
 }
 
-		sqlite3_stmt* children_start(identifier parent) {
-	DECLARE_STMT(find,"SELECT id,isdir,name,modified,modifiedns FROM entries WHERE parent = ?");
-	s
+// note: children(0) -> children of root

@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS entries (
 -- to find children for this parent
 CREATE INDEX IF NOT EXISTS parent_lookup ON entries(parent);
 
+CREATE TEMPORARY TABLE saw (
+id INTEGER PRIMARY KEY REFERENCES entries(id));
+
 -- be sure to do a POST order traversal, first the children, then the entry
 -- otherwise you set a directory's mtime, then set mtimes inside it,
 -- which might update its modification, and will update its atime
@@ -25,5 +28,3 @@ VALUES
 (0,"<root>", 1, 0, 0, 0);
 
 
-CREATE TEMPORARY TABLE saw (
-id INTEGER PRIMARY KEY REFERENCES entries(id));

@@ -11,7 +11,7 @@ bool dbstuff_has_seen(identifier me);
 identifier dbstuff_find(identifier parent,
 							const char* name, int len);
 
-identifier dbstuff_update(identifier me,
+int dbstuff_update(identifier me,
 													bool isdir, struct timespec mtime);
 
 identifier dbstuff_add(identifier parent,

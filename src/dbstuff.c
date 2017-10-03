@@ -37,14 +37,14 @@ identifier dbstuff_add(identifier parent,
 	return sqlite3_last_insert_rowid(db);
 }
 
-identifier dbstuff_update(identifier me, bool isdir, struct timespec mtime) {
+int dbstuff_update(identifier me, bool isdir, struct timespec mtime) {
 	BIND(int)(update, 1, isdir ? 1 : 0);
 	BIND(int64)(update, 2, mtime.tv_sec);
 	BIND(int64)(update, 3, mtime.tv_nsec);
 	BIND(int64)(update, 4, me);
-	STEP(add_insert);
-	sqlite3_reset(add_insert);
-	return sqlite3_last_insert_rowid(db);
+	STEP(update);
+	sqlite3_reset(update);
+	return sqlite3_changes(db);
 }
 
 bool dbstuff_has_seen(identifier me) {

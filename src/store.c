@@ -43,8 +43,7 @@ static identifier write_entry(identifier me,
 		dirty = true;
 		me = dbstuff_add(parent,name.s,name.l,istree, info.st_mtim);
 	} else {
-		dbstuff_update(me, istree, info.st_mtim);
-		dirty = sqlite3_changes(db) > 0;
+		dirty = dbstuff_update(me, istree, info.st_mtim) > 0;
 	}
 	return me;
 }

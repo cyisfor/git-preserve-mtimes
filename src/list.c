@@ -1,5 +1,4 @@
 #define _GNU_SOURCE // utimensat, AT_FDCWD
-#include "hook-common.h"
 
 #include "note.h"
 #include "ensure.h"
@@ -27,7 +26,7 @@ static void restore_mtime(struct entry e) {
 		e.mtime
 	};
 	//INFO("T %d",e.mtime.tv_sec);
-	utimensat(AT_FDCWD, e.name.s, times, 0);
+	//utimensat(AT_FDCWD, e.name.s, times, 0);
 }
 
 void restore(int inp) {
@@ -65,6 +64,7 @@ void restore(int inp) {
 int main(int argc, char *argv[])
 {
 	note_init();
+	repo_discover_init(".",1);
 	int inp = open(TIMES_PATH,O_RDONLY);
 	if(inp < 0) return 1; // aww, no .git_times file found...
 	restore(inp);

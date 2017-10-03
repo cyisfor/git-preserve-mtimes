@@ -30,7 +30,18 @@
 
 #define PREPARE(b,a) sqlite3_prepare(db,a,sizeof(a)-1,&b,NULL)
 
-identifier add(identifier parent,
+identifier dbstuff_add(identifier parent,
+							const char* name, int len, struct timespec mtime) {
+	BIND(text)(add_insert, 1, name, len, NULL);
+	BIND(int64)(add_insert, 2, parent);
+	BIND(int64)(add_insert, 3, mtime.tv_sec);
+	BIND(int64)(add_insert, 4, mtime.tv_nsec);
+	STEP(add_insert);
+	sqlite3_reset(add_insert);
+	return sqlite3_last_insert_rowid(db);
+}
+
+identifier dbstuff_find(identifier parent,
 							const char* name, int len, struct timespec mtime) {
 	BIND(text)(add_find, 1, name, len, NULL);
 	BIND(int64)(add_find, 2, parent);
@@ -40,19 +51,13 @@ identifier add(identifier parent,
 		sqlite3_reset(add_find);
 		return ret;
 	}
-		
 	sqlite3_reset(add_find);
-	BIND(text)(add_insert, 1, name, len, NULL);
-	BIND(int64)(add_insert, 2, parent);
-	BIND(int64)(add_insert, 3, mtime.tv_sec);
-	BIND(int64)(add_insert, 4, mtime.tv_nsec);
-	STEP(add_insert);
-	return sqlite3_last_insert_rowid(db);
+	return -1;
 }
 
 /* expose this, because... tail recursion gets messed up when you pass function pointers. */
 
-sqlite3_stmt* children(identifier parent) {
+sqlite3_stmt* dbstuff_children(identifier parent) {
 	// this must be reentrant! we will call children, before resetting children, when recursing!
 	sqlite3_stmt* stmt;
 #define PREFIX "CREATE TEMPORARY TABLE IF NOT EXISTS children"

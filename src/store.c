@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 	} else {
 		ensure_ge(out,0);
 		if(head)
-			store_tree(out, head);
+			store_tree(out, 0, head);
 		store_index(out);
 		if(dirty) {
 			rename(temp,TIMES_PATH);

@@ -43,19 +43,27 @@ void db_init(const char* name) {
 	PREPARE(begin,"BEGIN");
 	PREPARE(commit,"COMMIT");
 #include "db.sql.gen.c"
-	db_check(sqlite3_step(begin));
-	sqlite3_reset(begin);
+	db_begin();
 	sqlite3_exec(db, db_sql, errorderp, NULL, NULL);
-	db_check(sqlite3_step(commit));
-	sqlite3_reset(commit);
+	db_commit();
 }
 
+static
+int tlevel = 0;
+
 void db_begin(void) {
-	db_check(sqlite3_step(begin));
-	sqlite3_reset(begin);
+	if(tlevel == 0) {
+		db_check(sqlite3_step(begin));
+		sqlite3_reset(begin);
+	}
+	++tlevel;
 }
 
 void db_commit(void) {
-	db_check(sqlite3_step(commit));
-	sqlite3_reset(commit);
+	if(tlevel == 0) return;
+	if(--tlevel == 0) {
+		int res = sqlite3_step(commit);
+		// ugh
+		sqlite3_reset(commit);
+	}
 }

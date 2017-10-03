@@ -1,8 +1,7 @@
 #define _GNU_SOURCE // st_mtim
 
 #include "hook-common.h"
-#include "smallstring.h"
-
+#include "dbstuff.h"
 #include "ensure.h"
 #include "mystring.h"
 #include "repo.h"
@@ -117,7 +116,8 @@ void store_index(int out) {
 			}
 		}
 
-		onelevel(0, index->path, strlen(index->path));
+		const char* path = git_index_path(index);
+		onelevel(0, path, strlen(path));
 	}
 	git_index_free(index);
 }
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 	} else {
 		ensure_ge(out,0);
 		if(head)
-			store(out, head);
+			store_tree(out, head);
 		store_index(out);
 		if(dirty) {
 			rename(temp,TIMES_PATH);

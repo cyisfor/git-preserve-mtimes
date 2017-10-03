@@ -80,22 +80,23 @@ int main(int argc, char *argv[])
 	
 	size_t startname = 0;
 
+	void derp(void) {
 	while(startname != info.st_size) {
 		while(isspace(mem[startname])) {
 			if(++startname == info.st_size) {
-				break; // ended in lotsa whitespace ok
+				return; // ended in lotsa whitespace ok
 			}
 		}
 		const char* nl = memchr(mem+startname, '\n', info.st_size-startname);
 		if(nl == NULL) {
 			write(2,LITLEN("junk at the end? Should be a statement following the name!\n"));
-			return 1;
+			abort();
 		}
 		size_t startstmt = nl - mem + 1;
 
 		while(isspace(mem[startstmt])) {
 			if(++startstmt == info.st_size) {
-				return 2;
+				abort();
 			}
 		}
 
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
 
 		if(nentries == sentries) {
 			sentries += 0x100;
-			entries = realloc(entries,sizeof(sentries));
+			entries = realloc(entries,sizeof(*entries)*sentries);
 		}
 		size_t endname = startstmt - 1;
 		while(endname > startname && isspace(mem[endname])) --endname;
@@ -120,6 +121,7 @@ int main(int argc, char *argv[])
 		// parse the statement to remove weird characters
 
 		startname = endstmt;
+		--endstmt; // semicolon
 		while(endstmt > startstmt && isspace(mem[endstmt])) --endstmt;
 
 		entries[nentries].unescapedstmtlen = endstmt - startstmt + 1;
@@ -129,6 +131,8 @@ int main(int argc, char *argv[])
 		
 		++nentries;
 	}
+	}
+	derp();
 
 	// now some C
 

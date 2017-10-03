@@ -18,7 +18,7 @@ O=$(patsubst %,o/%.o,$N) \
 $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
 
-N=make-prepare db itoa db.sql.gen
+N=make-prepare db itoa db.sql.gen note
 make-prepare: $O
 	$(LINK)
 

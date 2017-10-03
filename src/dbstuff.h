@@ -10,7 +10,8 @@ bool dbstuff_has(identifier parent,
 							const char* name, int len);
 
 identifier dbstuff_find(identifier parent,
-							const char* name, int len);
+												const char* name, int len,
+												bool isdir, struct timespec mtime);
 
 identifier dbstuff_add(identifier parent,
 							const char* name, int len, bool isdir, struct timespec mtime);

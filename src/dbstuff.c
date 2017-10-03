@@ -37,8 +37,17 @@ identifier dbstuff_add(identifier parent,
 	return sqlite3_last_insert_rowid(db);
 }
 
-bool dbstuff_has(identifier parent,
-							const char* name, int len) {
+identifier dbstuff_update(identifier me, bool isdir, struct timespec mtime) {
+	BIND(int64)(update, 1, me);
+	BIND(int)(update, 2, isdir ? 1 : 0);
+	BIND(int64)(update, 3, mtime.tv_sec);
+	BIND(int64)(update, 4, mtime.tv_nsec);
+	STEP(add_insert);
+	sqlite3_reset(add_insert);
+	return sqlite3_last_insert_rowid(db);
+}
+
+bool dbstuff_has(identifier me) {
 	identifier me = dbstuff_find(parent,name,len);
 	if(me == -1) return false;
 	// but maybe haven't seen this session
@@ -52,9 +61,13 @@ bool dbstuff_has(identifier parent,
 }
 
 identifier dbstuff_find(identifier parent,
-							const char* name, int len) {
+												const char* name, int len,
+												bool isdir, struct timespec mtime) {
 	BIND(text)(add_find, 1, name, len, NULL);
 	BIND(int64)(add_find, 2, parent);
+		BIND(int)(add_find, 3, isdir ? 1 : 0);
+	BIND(int64)(add_find, 4, mtime.tv_sec);
+	BIND(int64)(add_find, 5, mtime.tv_nsec);
 	int res = STEP(add_find);
 	if(res == SQLITE_ROW) {
 		identifier ret = sqlite3_column_int64(add_find, 0);

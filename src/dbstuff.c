@@ -39,7 +39,16 @@ identifier dbstuff_add(identifier parent,
 
 bool dbstuff_has(identifier parent,
 							const char* name, int len) {
-	return -1 != dbstuff_find(parent, name,len);
+	identifier me = dbstuff_find(parent,name,len);
+	if(me == -1) return false;
+	// but maybe haven't seen this session
+	BIND(int64)(has_seen, 1, me);
+	int res = STEP(has_seen);
+	sqlite3_reset(has_seen);
+	if(res == SQLITE_ROW) return true;
+	BIND(int64)(see_entry,1,me);
+	STEP(see_entry);
+	return false;
 }
 
 identifier dbstuff_find(identifier parent,

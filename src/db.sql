@@ -23,3 +23,7 @@ CREATE INDEX IF NOT EXISTS parent_lookup ON entries(parent);
 INSERT INTO entries (id,name,isdir,parent,modified,modifiedns)
 VALUES
 (0,"<root>", 1, 0, 0, 0);
+
+
+CREATE TEMPORARY TABLE saw (
+id INTEGER PRIMARY KEY REFERENCES entries(id));

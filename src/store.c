@@ -66,7 +66,7 @@ void store_tree(identifier parent, git_tree* tree) {
 			name.s = git_tree_entry_name(entry);
 			name.l = strlen(name.s);
 
-			if(name.l == sizeof(TIMES_PATH) &&
+			if(name.l == (sizeof(TIMES_PATH)-1) &&
 				 0 == memcmp(name.s, TIMES_PATH, name.l))
 				continue;
 
@@ -90,7 +90,7 @@ void store_tree(identifier parent, git_tree* tree) {
 	}
 }
 
-void store_index() {
+void store_index(void) {
 	git_index* index = NULL;
 	repo_check(git_repository_index(&index, repo));
 	//INFO("index %s",git_index_path(index));
@@ -119,7 +119,7 @@ void store_index() {
 				.l = clen
 			};
 			
-			if(name.l == sizeof(TIMES_PATH) &&
+			if(name.l == (sizeof(TIMES_PATH)-1) &&
 				 0 == memcmp(name.s, TIMES_PATH, name.l))
 				return;
 			if(dbstuff_has(parent, name.s, name.l)) {
@@ -131,7 +131,7 @@ void store_index() {
 			}
 		}
 
-		const char* path = git_index_path(index);
+		const char* path = entry->path;
 		onelevel(0, path, strlen(path));
 	}
 	git_index_free(index);

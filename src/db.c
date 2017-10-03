@@ -46,7 +46,7 @@ void db_init(const char* name) {
 	PREPARE(commit,"COMMIT");
 #include "db.sql.gen.c"
 	db_begin();
-	db_check(sqlite3_exec(db, db_sql, errorderp, NULL, NULL));
+	sqlite3_exec(db, db_sql, errorderp, NULL, NULL);
 	db_commit();
 }
 

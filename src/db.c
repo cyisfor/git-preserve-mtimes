@@ -64,15 +64,17 @@ void db_begin(void) {
 void db_commit(void) {
 	if(tlevel == 0) return;
 	if(--tlevel == 0) {
-		int res = sqlite3_step(commit);
-		// ugh
+		db_check(sqlite3_step(commit));
 		sqlite3_reset(commit);
 	}
 }
 
 void db_close_and_exit(int code) {
+	if(tlevel > 0) {
+		db_check(sqlite3_step(commit));
+	}
 	sqlite3_finalize(begin);
 	sqlite3_finalize(commit);
-	prepare_finalize();
 	db_check(sqlite3_close(db));
+	exit(code);
 }

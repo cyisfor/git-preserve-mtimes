@@ -16,3 +16,4 @@ identifier dbstuff_add(identifier parent,
 							const char* name, int len, bool isdir, struct timespec mtime);
 
 sqlite3_stmt* dbstuff_children(identifier parent);
+void dbstuff_close_and_exit(int code);

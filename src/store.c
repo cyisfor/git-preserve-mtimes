@@ -180,6 +180,6 @@ int main(int argc, char *argv[])
 		}
 		close(out);
 	}
-	db_close_and_exit(0);
+	dbstuff_close_and_exit(0);
 	return 0;
 }

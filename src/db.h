@@ -3,7 +3,8 @@
 extern sqlite3* db;
 int db_check(int code);
 void db_init(const char* name);
-
+void db_begin(void);
+void db_commit(void);
 #define BIND(a) sqlite3_bind_ ## a
 
 #define STEP(a) db_check(sqlite3_step(a))

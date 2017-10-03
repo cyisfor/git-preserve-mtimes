@@ -43,5 +43,19 @@ void db_init(const char* name) {
 	PREPARE(begin,"BEGIN");
 	PREPARE(commit,"COMMIT");
 #include "db.sql.gen.c"
+	db_check(sqlite3_step(begin));
+	sqlite3_reset(begin);
 	sqlite3_exec(db, db_sql, errorderp, NULL, NULL);
+	db_check(sqlite3_step(commit));
+	sqlite3_reset(commit);
+}
+
+void db_begin(void) {
+	db_check(sqlite3_step(begin));
+	sqlite3_reset(begin);
+}
+
+void db_commit(void) {
+	db_check(sqlite3_step(commit));
+	sqlite3_reset(commit);
 }

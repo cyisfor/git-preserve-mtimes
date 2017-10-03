@@ -53,9 +53,11 @@ static identifier write_entry(int out, identifier parent, const string name, boo
 void store_tree(int out, identifier parent, git_tree* tree) {
 	int pos;
 	int num = git_tree_entrycount(tree);
+	db_begin();
 	for(pos=0;pos<num;++pos) {
 		const git_tree_entry* entry = git_tree_entry_byindex(tree,pos);
 		if(entry == NULL) {
+			db_commit();
 			return;
 		}
 
@@ -94,6 +96,7 @@ void store_index(int out) {
 	//INFO("index %s",git_index_path(index));
 	size_t count = git_index_entrycount(index);
 	size_t i;
+	db_begin();
 	for(i=0;i<count;++i) {
 		const git_index_entry * entry = git_index_get_byindex(index,i);
 		ensure_ne(entry,NULL);
@@ -132,6 +135,7 @@ void store_index(int out) {
 		onelevel(0, path, strlen(path));
 	}
 	git_index_free(index);
+	db_commit();
 }
 
 int main(int argc, char *argv[])

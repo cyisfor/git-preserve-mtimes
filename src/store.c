@@ -62,13 +62,14 @@ void store_tree(int out, identifier parent, git_tree* tree) {
 		{
 			name.s = git_tree_entry_name(entry);
 			name.l = strlen(name.s);
-			if(dbstuff_has(parent, name.s, name.l)) {
-				continue;
-			}
 
 			if(name.l == sizeof(TIMES_PATH) &&
 				 0 == memcmp(name.s, TIMES_PATH, name.l))
 				continue;
+
+			if(dbstuff_has(parent, name.s, name.l)) {
+				continue;
+			}
 		}
 
 		int type = git_tree_entry_type(entry);
@@ -113,7 +114,13 @@ void store_index(int out) {
 				.s = path,
 				.l = clen
 			};
-
+			
+			if(name.l == sizeof(TIMES_PATH) &&
+				 0 == memcmp(name.s, TIMES_PATH, name.l))
+				return;
+			if(dbstuff_has(parent, name.s, name.l)) {
+				return;
+			}
 			identifier me = write_entry(out, parent, name, istree);
 			if(istree) {
 				onelevel(me, path+clen+1, len-clen-1);

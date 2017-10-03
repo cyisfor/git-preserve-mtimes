@@ -83,7 +83,7 @@ sqlite3_stmt* dbstuff_children(identifier parent) {
 	char buf[0x100] = PREFIX;
 	size_t end = sizeof(PREFIX)-1 +
 		itoa(buf+sizeof(PREFIX)-1,0x100-sizeof(PREFIX)+1, parent);
-	memcpy(buf+end,LITLEN(" AS SELECT id,isdir,name,modified,modifiedns FROM entries WHERE parent = ?"));
+	memcpy(buf+end,LITLEN(" AS SELECT id,isdir,name,modified,modifiedns FROM entries WHERE parent = ? AND id != 0"));
 	PREPARE(stmt,buf);
 	BIND(int64)(stmt,1,parent);
 	STEP(stmt); // if not created, then okay.

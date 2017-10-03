@@ -1,5 +1,6 @@
 #define _GNU_SOURCE // st_mtim
 
+#include "prepare.h"
 #include "hook-common.h"
 #include "dbstuff.h"
 #include "ensure.h"
@@ -138,6 +139,7 @@ int main(int argc, char *argv[])
 	note_init();
 	repo_discover_init(".",1);
 	db_init(TIMES_PATH);
+	prepare_init();
 	// traverse head, storing mtimes in .git_times, adding .git_times to the repo
 	git_tree* head = NULL;
 	{

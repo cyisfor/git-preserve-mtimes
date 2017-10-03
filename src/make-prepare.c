@@ -13,8 +13,8 @@
 #include <stdlib.h> // write
 
 #define LITLEN(a) a,(sizeof(a)-1)
-#define PUTLIT(a) write(1,a,sizeof(a)-1)
-#define PUTS(a,len) write(1,a,len)
+#define PUTLIT(a) write(out,a,sizeof(a)-1)
+#define PUTS(a,len) write(out,a,len)
 
 char* escape(size_t* rlen, const char* s, size_t len) {
 	size_t space = 0x100;
@@ -137,6 +137,23 @@ int main(int argc, char *argv[])
 
 	// now some C
 
+	int out = open("temp",O_WRONLY|O_CREAT|O_TRUNC,0644);
+
+	for(i=0;i<nentries;++i) {
+		PUTLIT("extern sqlite3_stmt* ");
+		PUTS(mem + entries[i].name, entries[i].namelen);
+		PUTLIT(";\n");
+	}
+	PUTLIT("\nvoid prepare_init(void)\n");
+	PUTLIT("void prepare_finalize(void);\n");
+
+	close(out);
+	rename(out,target);
+	target[strlen(target)-1] = 'c'; // .h -> .c
+
+	out = open("temp",O_WRONLY|O_CREAT|O_TRUNC,0644);
+
+	
 	// sqlite3_stmt* name;
 	int i;
 	for(i=0;i<nentries;++i) {

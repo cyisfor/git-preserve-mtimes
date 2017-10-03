@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <time.h> // timespec
 
+#include "prepare.gen.h"
+
 typedef sqlite_int64 identifier;
 
 bool dbstuff_has(identifier parent,

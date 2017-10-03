@@ -24,11 +24,6 @@
 
 #include "prepare.gen.c"
 
-#define BIND(a) sqlite3_bind_ ## a
-
-#define STEP(a) db_check(sqlite3_step(a))
-
-#define PREPARE(b,a) sqlite3_prepare(db,a,sizeof(a)-1,&b,NULL)
 
 identifier dbstuff_add(identifier parent,
 							const char* name, int len, bool isdir, struct timespec mtime) {
@@ -44,7 +39,7 @@ identifier dbstuff_add(identifier parent,
 
 bool dbstuff_has(identifier parent,
 							const char* name, int len) {
-	return -1 == dbstuff_find(parent, name,len);
+	return -1 != dbstuff_find(parent, name,len);
 }
 
 identifier dbstuff_find(identifier parent,

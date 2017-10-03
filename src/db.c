@@ -8,6 +8,8 @@
 
 sqlite3* db = NULL;
 
+sqlite3_stmt* begin, *commit;
+
 int db_check(int code) {
 	switch(code) {
 	case SQLITE_DONE:
@@ -38,7 +40,8 @@ int errorderp(void* udata, int args, char**argv, char** colname) {
 
 void db_init(const char* name) {
 	db_check(sqlite3_open(name, &db));
-	
+	PREPARE(begin,"BEGIN");
+	PREPARE(commit,"COMMIT");
 #include "db.sql.gen.c"
 	sqlite3_exec(db, db_sql, errorderp, NULL, NULL);
 }

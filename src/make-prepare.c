@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 		PUTS(mem + entries[i].name, entries[i].namelen);
 		PUTLIT(";\n");
 	}
-	PUTLIT("\nvoid prepare_init(void)\n");
+	PUTLIT("\nvoid prepare_init(void);\n");
 	PUTLIT("void prepare_finalize(void);\n");
 
 	close(out);

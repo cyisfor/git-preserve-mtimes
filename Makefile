@@ -22,7 +22,9 @@ N=make-prepare db itoa db.sql.gen note
 make-prepare: $O
 	$(LINK)
 
-o/prepare.gen.c: make-prepare src/prepare.sql
+targets:=$(targets) dbstuff
+
+prepare.gen.c o/prepare.gen.c: make-prepare src/prepare.sql | o
 	./make-prepare <src/prepare.sql > $@.temp
 	mv $@.temp $@
 

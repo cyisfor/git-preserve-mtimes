@@ -1,4 +1,6 @@
-#include "db.h"
+#include "dbstuff.h"
+#include <stdlib.h> // NULL
+
 
 /* hokay, so strategy...
 	annoying as **** to try and merge index and working tree, so let sqlite figure it out.
@@ -19,7 +21,11 @@
 
 #include "prepare.gen.c"
 
-identifer add(identifier parent,
+#define BIND(a) sqlite3_bind_ ## a
+
+#define STEP(a) db_check(sqlite3_step(a))
+
+identifier add(identifier parent,
 							const char* name, int len, struct timespec mtime) {
 	BIND(text)(add_find, 1, name, len, NULL);
 	BIND(int64)(add_find, 2, parent);

@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 		PUTS(buf,	itoa(buf,0x100,entries[i].unescapedstmtlen)); 
 		PUTLIT(", &");
 		PUTS(mem + entries[i].name, entries[i].namelen);
-		PUTLIT(", NULL);\n");
+		PUTLIT(", NULL));\n");
 	}
 	PUTLIT("}\n\n");
 
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 	for(i=0;i<nentries;++i) {
 		PUTLIT("\tdb_check(sqlite3_finalize(");
 		PUTS(mem + entries[i].name, entries[i].namelen);
-		PUTLIT(");\n");
+		PUTLIT("));\n");
 	}
 	PUTLIT("}\n");
 	return 0;

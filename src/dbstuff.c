@@ -102,7 +102,7 @@ sqlite3_stmt* dbstuff_children(identifier parent) {
 
 // note: children(0) -> topmost entries
 
-void dbstuff_close_and_exit(int code) {
+void dbstuff_close(void) {
 	prepare_finalize();
-	db_close_and_exit(code);
+	db_close();
 }

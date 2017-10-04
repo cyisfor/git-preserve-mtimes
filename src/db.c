@@ -69,12 +69,12 @@ void db_commit(void) {
 	}
 }
 
-void db_close_and_exit(int code) {
+void db_close(void) {
 	if(tlevel > 0) {
 		db_check(sqlite3_step(commit));
 	}
 	db_check(sqlite3_finalize(begin));
 	db_check(sqlite3_finalize(commit));
 	db_check(sqlite3_close(db));
-	exit(code);
+	// always exit right after this!
 }

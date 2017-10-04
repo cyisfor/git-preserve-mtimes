@@ -178,9 +178,11 @@ int main(int argc, char *argv[])
 			store_tree(0, head);
 		store_index();
 		if(dirty) {
+			dbstuff_close();
 			repo_add(TIMES_PATH);
+			exit(0);
 		} 
 	}
-	dbstuff_close_and_exit(0);
+	dbstuff_close();
 	return 0;
 }

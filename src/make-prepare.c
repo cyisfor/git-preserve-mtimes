@@ -144,6 +144,9 @@ int main(int argc, char *argv[])
 	int i;
 
 	int out = open("temp",O_WRONLY|O_CREAT|O_TRUNC,0644);
+
+	PUTLIT("#ifndef PREPARE_GEN_H\n#define PREPARE_GEN_H");
+	
 	// extern sqlite3_stmt* name;
 	for(i=0;i<nentries;++i) {
 		PUTLIT("extern sqlite3_stmt* ");
@@ -153,6 +156,7 @@ int main(int argc, char *argv[])
 	PUTLIT("\nvoid prepare_init(void);\n");
 	PUTLIT("void prepare_finalize(void);\n");
 
+	PUTLIT("#endif /* PREPARE_GEN_H */\n");
 	close(out);
 	rename("temp",target);
 	target[strlen(target)-1] = 'c'; // .h -> .c

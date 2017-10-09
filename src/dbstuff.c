@@ -45,7 +45,7 @@ void save_ent(int level, FILE* out, struct entry* e) {
 			fputc(' ',out);
 //		fputc(' ',out);
 		}
-		fprintf(out, "%ld.%ld %s\n",e->modified.tv_sec,e->modified.tv_nsec,e->name);
+		fprintf(out, "%ld.%ld %.*s\n",e->modified.tv_sec,e->modified.tv_nsec,e->namelen,e->name);
 		if(e->children) {
 			save_ent(level+1, out, e->children);
 		}
@@ -77,7 +77,7 @@ struct entry* load_ent(FILE* inp) {
 
 		char* name = malloc(amt-endtime-level+1);
 		memcpy(name,line+level+endtime,amt-endtime-level);
-		name[amt-endtime-level] = '\0';
+		name[amt-endtime-level] = '\0'; // chdir requires
 		e->namelen = amt-endtime-level;
 		e->name = name;
 		e->children = NULL;
@@ -121,11 +121,17 @@ struct entry* dbstuff_add(struct entry* parent,
 	struct entry* e = malloc(sizeof(struct entry));
 	e->was_seen = false;
 	e->modified = mtime;
-	char* derpname = malloc(len);
+	char* derpname = malloc(len+1);
 	memcpy(derpname,name,len);
+	derpname[len] = '\0';
 	e->name = derpname;
 	e->namelen = len;
-	e->parent = parent;
+	if(parent == NULL) {
+		dbstuff_root = e;
+		e->parent = NULL;
+	} else {
+		e->parent = parent;
+	}
 	e->children = NULL;
 	e->next = NULL;
 	return e;
@@ -145,6 +151,7 @@ bool dbstuff_has_seen(struct entry* me) {
 
 struct entry* dbstuff_find(struct entry* parent,
 													 const char* name, int len) {
+	if(!parent) return NULL;
 	struct entry* cur = parent->children;
 	while(cur) {
 		if(cur->namelen == len) {
@@ -171,5 +178,6 @@ void dbstuff_open(const char* dest) {
 	FILE* inp = fopen(dbfile,"rt");
 	if(inp) {
 		dbstuff_root = load_ent(inp);
+		fclose(inp);
 	}
 }

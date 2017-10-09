@@ -63,7 +63,9 @@ struct entry* load_ent(FILE* inp) {
 	for(;;) {
 		ssize_t amt = getline(&line, &space, inp);
 		if(amt <= 0) break;
-
+		if(line[amt-1] == '\n')
+			if(--amt == 0) continue; // empty line
+		
 		int level;
 		for(level=0;level<amt;++level) {
 			if(line[level] != ' ') break;
@@ -129,13 +131,16 @@ struct entry* dbstuff_add(struct entry* parent,
 	e->name = derpname;
 	e->namelen = len;
 	if(parent == NULL) {
+		if(dbstuff_root)
+			e->next = dbstuff_root;
 		dbstuff_root = e;
 		e->parent = NULL;
 	} else {
 		e->parent = parent;
+		e->next = parent->children;
+		parent->children = e;
 	}
 	e->children = NULL;
-	e->next = NULL;
 	return e;
 }
 
@@ -153,8 +158,7 @@ bool dbstuff_has_seen(struct entry* me) {
 
 struct entry* dbstuff_find(struct entry* parent,
 													 const char* name, int len) {
-	if(!parent) return NULL;
-	struct entry* cur = parent->children;
+	struct entry* cur = parent ? parent->children : dbstuff_root;
 	while(cur) {
 		if(cur->namelen == len) {
 			if(0==memcmp(cur->name, name, len)) {

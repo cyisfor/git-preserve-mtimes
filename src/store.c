@@ -144,12 +144,14 @@ void store_index(void) {
 			}
 			me = write_entry(me, parent, name);
 			if(istree) {
+				ensure0(chdir(me->name));
 				onelevel(me, path+clen+1, len-clen-1);
+				ensure0(chdir(".."));
 			}
 		}
 
 		const char* path = entry->path;
-		onelevel(dbstuff_root, path, strlen(path));
+		onelevel(0, path, strlen(path));
 	}
 	git_index_free(index);
 }

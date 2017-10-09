@@ -20,13 +20,12 @@ static void restore_mtime(const char* name, struct timespec mtime) {
 }
 
 void restore() {
-	void down(struct entry* parent) {
-		struct entry* cur = parent->children;
+	void down(struct entry* cur) {
 		while(cur) {
 			if(cur->children) {
 				//isdir
 				ensure0(chdir(cur->name));
-				down(cur);
+				down(cur->children);
 				ensure0(chdir(".."));
 			}
 			restore_mtime(cur->name,cur->modified);

@@ -24,9 +24,103 @@
 
 #include "prepare.gen.c"
 
+struct entry {
+	struct entry* children;
+	int nkids;
+	struct entry* parent;
+	struct entry* next;
+	const char* name;
+	struct timespec modified;
+};
 
-identifier dbstuff_add(identifier parent,
-							const char* name, int len, bool isdir, struct timespec mtime) {
+/* we can't use sqlite, because it keeps modifying the damn file...
+	 may as well just use a text-based format then, ugh.
+	 maybe byte #1 is a "format byte" newline for text format
+
+	 so instead, let's be incredibly unscalable, and keep a mirror of the
+	 file tree in memory, so we can add from the index, after adding
+	 from the tree.
+
+	 that means 2 copies of the entire files in memory, 1 of which we can't access
+	 or modify because libgit2 sucks.
+ */
+
+struct entry* root = NULL;
+
+void save(int level, FILE* out, struct entry* e) {
+	int i;
+	for(i=0;i<level;++i) {
+		fputc(' ',out);
+//		fputc(' ',out);
+	}
+	fprintf(out, "%ld.%ld %s\n",e->modified.tv_sec,e->modified.tv_nsec,e->name);
+	if(e->nkids) {
+		int i = 0;
+		for(i=0;i<e->nkids;++i) {
+			serialize(level+1, out, &e->children[i]);
+		}
+	}
+}
+
+
+void load(int old_level, struct entry* parent, FILE* inp) {
+	static char* line = NULL;
+	static size_t space = 0;
+
+	ssize_t amt = getline(&line, &space, inp);
+	if(amt <= 0) return NULL;
+
+	int level;
+	for(level=0;level<amt;++level) {
+		if(line[level] != ' ') break;
+	}
+
+	struct entry* e = malloc(sizeof(struct entry));
+	int endtime = sscanf(line+level,amt-level,"%ld.%ld ",
+											 &e->modified.tv_sec,
+											 &e->modified.tv_nsec);
+
+	char* name = malloc(amt-endtime-level);
+	memcpy(name,line+level+endtime,amt-endtime-level);
+
+	e->name = name;
+
+	if(old_level > level) {
+		// we're moving on up
+		// add this to the parent's parent, then return.
+		// this is never more than 1 level different
+		assert(parent);
+		parent = parent->parent;
+		++parent->nkids;
+		parent->children = realloc(parent->children,sizeof(*parent->children)*parent->nkids);
+		parent->children[nkids-1] = e;
+		return e;
+	}
+	if(old_level == level) {
+		
+		
+	
+	e->children = NULL;
+	e->nkids = 0;
+	e->
+	
+	int i;
+	for(i=0;i<level;++i) {
+		fputc(' ',out);
+		fputc(' ',out);
+	}
+	fprintf(out, "%ld.%ld\t%s\n",e->modified.tv_sec,e->modified.tv_nsec,e->name);
+	if(e->nkids) {
+		int i = 0;
+		for(i=0;i<e->nkids;++i) {
+			serialize(level+1, out, &e->children[i]);
+		}
+	}
+}
+
+
+struct entry* dbstuff_add(struct entry* parent,
+													const char* name, int len, bool isdir, struct timespec mtime) {
 	BIND(text)(add_insert, 1, name, len, NULL);
 	BIND(int64)(add_insert, 2, parent);
 	BIND(int)(add_insert, 3, isdir ? 1 : 0);

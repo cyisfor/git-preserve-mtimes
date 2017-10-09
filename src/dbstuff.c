@@ -71,14 +71,16 @@ struct entry* load_ent(FILE* inp) {
 
 		struct entry* e = malloc(sizeof(struct entry));
 		e->was_seen = false;
-		int endtime = sscanf(line+level,"%ld.%ld ",
-												 &e->modified.tv_sec,
-												 &e->modified.tv_nsec);
-
-		char* name = malloc(amt-endtime-level+1);
-		memcpy(name,line+level+endtime,amt-endtime-level);
-		name[amt-endtime-level] = '\0'; // chdir requires
-		e->namelen = amt-endtime-level;
+		char* end = NULL;
+		e->modified.tv_sec = strtol(line+level,&end,10);
+		assert(*end == '.');
+		e->modified.tv_nsec = strtol(end+1,&end,10);
+		assert(*end == ' ');
+		int endtime = ((long)end - amt) + 1;
+		char* name = malloc(amt-endtime+1);
+		memcpy(name,line+endtime,amt-endtime);
+		name[amt-endtime] = '\0'; // chdir requires
+		e->namelen = amt-endtime;
 		e->name = name;
 		e->children = NULL;
 

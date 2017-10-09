@@ -2,6 +2,7 @@
 #include "dbstuff.h"
 #include <stdlib.h> // NULL
 #include <string.h>
+#include <stdio.h>
 
 #define LITLEN(a) a,(sizeof(a)-1)
 

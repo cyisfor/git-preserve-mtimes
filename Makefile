@@ -1,6 +1,6 @@
 VPATH = o src
 
-P=libgit2 sqlite3
+P=libgit2
 PKG_CONFIG_PATH:=/custom/libgit2/lib/pkgconfig
 export PKG_CONFIG_PATH
 
@@ -8,7 +8,7 @@ CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-c
 CFLAGS+=-fshort-enums
 LDLIBS+=$(shell pkg-config --libs $(P))
 
-all: make-prepare store restore installer
+all: store restore installer
 
 LINK=$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 COMPILE=$(CC) $(CFLAGS) -MMD -MT $@ -c -o $@ $<
@@ -17,10 +17,6 @@ COMPILE=$(CC) $(CFLAGS) -MMD -MT $@ -c -o $@ $<
 O=$(patsubst %,o/%.o,$N) \
 $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
-
-N=make-prepare db itoa db.sql.gen note
-make-prepare: $O
-	$(LINK)
 
 targets:=$(targets) dbstuff
 
@@ -31,18 +27,18 @@ o/db.sql.gen.c: src/db.sql data_to_header_string/pack
 	name=db_sql ./data_to_header_string/pack <src/db.sql > $@.temp
 	mv $@.temp $@
 
-o/%.d: src/%.c
+o/%.d: src/%.c | o
 	$(CC) $(CFLAGS) -MM -MG -MT o/$*.o -c -o $@ $<
 
 N=install note
 installer: $O
 	$(LINK)
 
-N=store repo note dbstuff db itoa
+N=store repo note dbstuff
 store: $O intern/libintern.a
 	$(LINK)
 
-N=restore repo note dbstuff db itoa
+N=restore repo note dbstuff
 restore: $O
 	$(LINK)
 

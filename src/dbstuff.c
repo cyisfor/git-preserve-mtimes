@@ -76,7 +76,7 @@ struct entry* load_ent(FILE* inp) {
 		assert(*end == '.');
 		e->modified.tv_nsec = strtol(end+1,&end,10);
 		assert(*end == ' ');
-		int endtime = ((long)end - amt) + 1;
+		int endtime = (end - line) + 1;
 		char* name = malloc(amt-endtime+1);
 		memcpy(name,line+endtime,amt-endtime);
 		name[amt-endtime] = '\0'; // chdir requires

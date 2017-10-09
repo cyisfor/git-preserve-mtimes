@@ -56,13 +56,14 @@ static struct entry* write_entry(struct entry* me,
 	 into it. But every tree below it, we can just walk like a normal tree.
 */
 
-void store_tree(struct entry* parent, git_tree* tree) {
+struct entry* store_tree(struct entry* parent, git_tree* tree) {
 	int pos;
 	int num = git_tree_entrycount(tree);
+	struct entry* first = NULL;
 	for(pos=0;pos<num;++pos) {
 		const git_tree_entry* entry = git_tree_entry_byindex(tree,pos);
 		if(entry == NULL) {
-			return;
+			return NULL;
 		}
 
 		struct entry* me;
@@ -77,25 +78,33 @@ void store_tree(struct entry* parent, git_tree* tree) {
 				continue;
 
 			me = dbstuff_find(parent,name.s,name.l);
-			if(me && me->was_seen) {
-				// already saw you. next!
-				continue;
+			if(me) {
+				if(!first) first = me;
+				if(me->was_seen) {
+					// already saw you. next!
+					continue;
+				}
 			}
 		}
 
 		int type = git_tree_entry_type(entry);
 		bool istree = (type == GIT_OBJ_TREE);
 		me = write_entry(me, parent, name);
+		if(me)
+			if(!first) first = me;
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
 			git_tree* tree;
 			repo_check(git_tree_lookup(&tree, repo, oid));
 			chdir(me->name);
-			store_tree(me, tree);
+			me = store_tree(me, tree);
+			if(me)
+				if(!first) first = me;
 			chdir("..");
 			git_tree_free(tree);
 		}
 	}
+	return first;
 }
 
 void store_index(void) {
@@ -171,7 +180,7 @@ int main(int argc, char *argv[])
 		abort();
 	} else {
 		if(head)
-			store_tree(dbstuff_root, head);
+			dbstuff_root = store_tree(dbstuff_root, head);
 		store_index();
 		if(dirty) {
 			dbstuff_close();

@@ -14,6 +14,9 @@ struct entry {
 	bool was_seen;
 };
 
+extern
+struct entry* dbstuff_root;
+
 struct entry* dbstuff_find(struct entry* parent,
 													 const char* name, int len);
 

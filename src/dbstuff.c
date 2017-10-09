@@ -114,7 +114,7 @@ struct entry* load_ent(FILE* inp) {
 	return root;
 }
 
-struct entry* root = NULL;
+struct entry* dbstuff_root = NULL;
 
 struct entry* dbstuff_add(struct entry* parent,
 													const char* name, int len, struct timespec mtime) {
@@ -161,7 +161,7 @@ const char* dbfile = NULL;
 
 void dbstuff_close(void) {
 	FILE* out = fopen(".git/temp","wt");
-	save_ent(0, out, root);
+	save_ent(0, out, dbstuff_root);
 	fclose(out);
 	rename(".git/temp",dbfile);
 }
@@ -170,6 +170,6 @@ void dbstuff_open(const char* dest) {
 	dbfile = dest;
 	FILE* inp = fopen(dbfile,"rt");
 	if(inp) {
-		root = load_ent(inp);
+		dbstuff_root = load_ent(inp);
 	}
 }

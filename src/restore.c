@@ -33,13 +33,13 @@ void restore() {
 			cur = cur->next;
 		}
 	}
-	down(root);
+	down(dbstuff_root);
 }
 
 int main(int argc, char *argv[])
 {
 	note_init();
-	db_init(TIMES_PATH);
+	dbstuff_open(TIMES_PATH);
 	restore();
 	return 0;
 }

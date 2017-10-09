@@ -59,11 +59,9 @@ static struct entry* write_entry(struct entry* me,
 void store_tree(struct entry* parent, git_tree* tree) {
 	int pos;
 	int num = git_tree_entrycount(tree);
-	db_begin();
 	for(pos=0;pos<num;++pos) {
 		const git_tree_entry* entry = git_tree_entry_byindex(tree,pos);
 		if(entry == NULL) {
-			db_commit();
 			return;
 		}
 
@@ -106,7 +104,6 @@ void store_index(void) {
 	//INFO("index %s",git_index_path(index));
 	size_t count = git_index_entrycount(index);
 	size_t i;
-	db_begin();
 	for(i=0;i<count;++i) {
 		const git_index_entry * entry = git_index_get_byindex(index,i);
 		ensure_ne(entry,NULL);
@@ -143,7 +140,7 @@ void store_index(void) {
 		}
 
 		const char* path = entry->path;
-		onelevel(root, path, strlen(path));
+		onelevel(dbstuff_root, path, strlen(path));
 	}
 	git_index_free(index);
 }
@@ -152,8 +149,7 @@ int main(int argc, char *argv[])
 {
 	note_init();
 	repo_discover_init(".",1);
-	db_init(TIMES_PATH);
-	prepare_init();
+	dbstuff_open(TIMES_PATH);
 	// traverse head, storing mtimes in .git_times, adding .git_times to the repo
 	git_tree* head = NULL;
 	{
@@ -175,7 +171,7 @@ int main(int argc, char *argv[])
 		abort();
 	} else {
 		if(head)
-			store_tree(root, head);
+			store_tree(dbstuff_root, head);
 		store_index();
 		if(dirty) {
 			dbstuff_close();

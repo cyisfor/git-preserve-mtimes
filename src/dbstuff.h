@@ -1,15 +1,18 @@
-#include "db.h"
 #include <stdbool.h>
 #include <time.h> // timespec
 
-#include "prepare.gen.h"
+struct entry {
+	struct entry* children;
+	struct entry* parent;
+	struct entry* next;
+	const char* name;
+	int namelen;
+	struct timespec modified;
+	bool was_seen;
+};
 
-typedef sqlite_int64 identifier;
-
-bool dbstuff_has_seen(identifier me);
-
-identifier dbstuff_find(identifier parent,
-							const char* name, int len);
+struct entry* dbstuff_find(struct entry* parent,
+													 const char* name, int len);
 
 int dbstuff_update(identifier me,
 													bool isdir, struct timespec mtime);

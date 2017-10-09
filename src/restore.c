@@ -20,26 +20,20 @@ static void restore_mtime(const char* name, struct timespec mtime) {
 }
 
 void restore() {
-	void down(int parent) {
-		sqlite3_stmt* children = dbstuff_children(parent);
-		for(;;) {
-			if(STEP(children) == SQLITE_DONE) break;
-			const char* name = sqlite3_column_text(children,2);
-			if(sqlite3_column_int(children,1) != 0) {
+	void down(struct entry* parent) {
+		struct entry* cur = parent->children;
+		while(cur) {
+			if(cur->children) {
 				//isdir
-				ensure0(chdir(name));
-				down(sqlite3_column_int64(children,0));
+				ensure0(chdir(cur->name));
+				down(cur);
 				ensure0(chdir(".."));
 			}
-			struct timespec mtime = {
-				sqlite3_column_int64(children,3),
-				sqlite3_column_int64(children,4)
-			};
-			restore_mtime(name,mtime);
+			restore_mtime(name,cur->modified);
+			cur = cur->next;
 		}
-		sqlite3_reset(children);
 	}
-	down(0);
+	down(root);
 }
 
 int main(int argc, char *argv[])

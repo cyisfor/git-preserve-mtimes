@@ -126,6 +126,7 @@ struct entry* dbstuff_add(struct entry* parent,
 	e->parent = parent;
 	e->children = NULL;
 	e->next = NULL;
+	return e;
 }
 
 int dbstuff_update(struct entry* me, struct timespec mtime) {

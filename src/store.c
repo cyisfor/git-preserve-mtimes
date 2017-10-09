@@ -31,19 +31,19 @@ struct treestack {
 
 bool dirty = false;
 
-static identifier write_entry(identifier me,
-															identifier parent, const string name, bool istree) {
+static struct entry* write_entry(struct entry* me,
+																 struct entry* parent, const string name) {
 	struct stat info;
 	if(0 != stat(name.s,&info)) {
 		//INFO("deleted %.*s",name.l,name.s);
 		// allow this marked as "seen" since we don't need to save it at all.
 		return -1;
 	}
-	if(me == -1) {
+	if(me == NULL) {
 		dirty = true;
 		me = dbstuff_add(parent,name.s,name.l,istree, info.st_mtim);
 	} else {
-		dirty = dbstuff_update(me, istree, info.st_mtim) > 0;
+		dirty = dbstuff_update(me, info.st_mtim) > 0;
 	}
 	return me;
 }
@@ -56,7 +56,7 @@ static identifier write_entry(identifier me,
 	 into it. But every tree below it, we can just walk like a normal tree.
 */
 
-void store_tree(identifier parent, git_tree* tree) {
+void store_tree(struct entry* parent, git_tree* tree) {
 	int pos;
 	int num = git_tree_entrycount(tree);
 	db_begin();
@@ -67,7 +67,7 @@ void store_tree(identifier parent, git_tree* tree) {
 			return;
 		}
 
-		identifier me;
+		struct entry* me;
 		
 		string name;
 		{
@@ -79,19 +79,20 @@ void store_tree(identifier parent, git_tree* tree) {
 				continue;
 
 			me = dbstuff_find(parent,name.s,name.l);
-			if(me != -1 && dbstuff_has_seen(me)) {
+			if(me && me->was_seen) {
+				// already saw you. next!
 				continue;
 			}
 		}
 
 		int type = git_tree_entry_type(entry);
 		bool istree = (type == GIT_OBJ_TREE);
-		me = write_entry(me, parent, name, istree);
+		me = write_entry(me, parent, name);
 		if(istree) {
 			const git_oid* oid = git_tree_entry_id(entry);
 			git_tree* tree;
 			repo_check(git_tree_lookup(&tree, repo, oid));
-			chdir(name.s);
+			chdir(me->name);
 			store_tree(me, tree);
 			chdir("..");
 			git_tree_free(tree);
@@ -110,7 +111,7 @@ void store_index(void) {
 		const git_index_entry * entry = git_index_get_byindex(index,i);
 		ensure_ne(entry,NULL);
 
-		void onelevel(identifier parent, const char* path, size_t len) {
+		void onelevel(struct entry* parent, const char* path, size_t len) {
 			if(!len) return;
 			const char* slash = memchr(path,'/',len);
 			size_t clen;
@@ -131,21 +132,20 @@ void store_index(void) {
 			if(name.l == (sizeof(TIMES_PATH)-1) &&
 				 0 == memcmp(name.s, TIMES_PATH, name.l))
 				return;
-			identifier me = dbstuff_find(parent,name.s,name.l);
-			if(dbstuff_has_seen(me)) {
+			struct entry* me = dbstuff_find(parent,name.s,name.l);
+			if(me && me->was_seen) {
 				return;
 			}
-			me = write_entry(me, parent, name, istree);
+			me = write_entry(me, parent, name);
 			if(istree) {
 				onelevel(me, path+clen+1, len-clen-1);
 			}
 		}
 
 		const char* path = entry->path;
-		onelevel(0, path, strlen(path));
+		onelevel(root, path, strlen(path));
 	}
 	git_index_free(index);
-	db_commit();
 }
 
 int main(int argc, char *argv[])
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 		abort();
 	} else {
 		if(head)
-			store_tree(0, head);
+			store_tree(root, head);
 		store_index();
 		if(dirty) {
 			dbstuff_close();

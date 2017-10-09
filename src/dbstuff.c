@@ -3,6 +3,7 @@
 #include <stdlib.h> // NULL
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #define LITLEN(a) a,(sizeof(a)-1)
 
@@ -38,17 +39,17 @@
 
 static
 void save_ent(int level, FILE* out, struct entry* e) {
-	int i;
-	for(i=0;i<level;++i) {
-		fputc(' ',out);
+	while(e) {
+		int i;
+		for(i=0;i<level;++i) {
+			fputc(' ',out);
 //		fputc(' ',out);
-	}
-	fprintf(out, "%ld.%ld %s\n",e->modified.tv_sec,e->modified.tv_nsec,e->name);
-	if(e->nkids) {
-		int i = 0;
-		for(i=0;i<e->nkids;++i) {
-			serialize(level+1, out, &e->children[i]);
 		}
+		fprintf(out, "%ld.%ld %s\n",e->modified.tv_sec,e->modified.tv_nsec,e->name);
+		if(e->children) {
+			save_ent(level+1, out, e->children);
+		}
+		e = e->next;
 	}
 }
 
@@ -70,7 +71,7 @@ struct entry* load_ent(FILE* inp) {
 
 		struct entry* e = malloc(sizeof(struct entry));
 		e->was_seen = false;
-		int endtime = sscanf(line+level,amt-level,"%ld.%ld ",
+		int endtime = sscanf(line+level,"%ld.%ld ",
 												 &e->modified.tv_sec,
 												 &e->modified.tv_nsec);
 
@@ -116,7 +117,7 @@ struct entry* load_ent(FILE* inp) {
 struct entry* root = NULL;
 
 struct entry* dbstuff_add(struct entry* parent,
-													const char* name, int len, bool isdir, struct timespec mtime) {
+													const char* name, int len, struct timespec mtime) {
 	struct entry* e = malloc(sizeof(struct entry));
 	e->was_seen = false;
 	e->modified = mtime;

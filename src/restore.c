@@ -29,7 +29,7 @@ void restore() {
 				down(cur);
 				ensure0(chdir(".."));
 			}
-			restore_mtime(name,cur->modified);
+			restore_mtime(cur->name,cur->modified);
 			cur = cur->next;
 		}
 	}

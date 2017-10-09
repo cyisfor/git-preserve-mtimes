@@ -37,11 +37,11 @@ static struct entry* write_entry(struct entry* me,
 	if(0 != stat(name.s,&info)) {
 		//INFO("deleted %.*s",name.l,name.s);
 		// allow this marked as "seen" since we don't need to save it at all.
-		return -1;
+		return NULL;
 	}
 	if(me == NULL) {
 		dirty = true;
-		me = dbstuff_add(parent,name.s,name.l,istree, info.st_mtim);
+		me = dbstuff_add(parent,name.s,name.l, info.st_mtim);
 	} else {
 		dirty = dbstuff_update(me, info.st_mtim) > 0;
 	}

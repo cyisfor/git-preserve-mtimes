@@ -17,11 +17,10 @@ struct entry {
 struct entry* dbstuff_find(struct entry* parent,
 													 const char* name, int len);
 
-int dbstuff_update(struct entry* me,
-									 bool isdir, struct timespec mtime);
+int dbstuff_update(struct entry* me, struct timespec mtime);
 
 struct entry* dbstuff_add(struct entry* parent,
-													const char* name, int len, bool isdir, struct timespec mtime);
+													const char* name, int len, struct timespec mtime);
 
 void dbstuff_open(const char*);
 void dbstuff_close(void);

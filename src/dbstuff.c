@@ -22,16 +22,6 @@
 	
 */
 
-#include "prepare.gen.c"
-
-struct entry {
-	struct entry* children;
-	int nkids;
-	struct entry* parent;
-	struct entry* next;
-	const char* name;
-	struct timespec modified;
-};
 
 /* we can't use sqlite, because it keeps modifying the damn file...
 	 may as well just use a text-based format then, ugh.
@@ -45,9 +35,8 @@ struct entry {
 	 or modify because libgit2 sucks.
  */
 
-struct entry* root = NULL;
-
-void save(int level, FILE* out, struct entry* e) {
+static
+void save_ent(int level, FILE* out, struct entry* e) {
 	int i;
 	for(i=0;i<level;++i) {
 		fputc(' ',out);
@@ -63,140 +52,121 @@ void save(int level, FILE* out, struct entry* e) {
 }
 
 
-void load(int old_level, struct entry* parent, FILE* inp) {
-	static char* line = NULL;
-	static size_t space = 0;
+struct entry* load_ent(FILE* inp) {
+	struct entry* cur = NULL, *root = NULL;
+	char* line = NULL;
+	size_t space = 0;
+	int cur_level = 0;
 
-	ssize_t amt = getline(&line, &space, inp);
-	if(amt <= 0) return NULL;
+	for(;;) {
+		ssize_t amt = getline(&line, &space, inp);
+		if(amt <= 0) break;
 
-	int level;
-	for(level=0;level<amt;++level) {
-		if(line[level] != ' ') break;
-	}
-
-	struct entry* e = malloc(sizeof(struct entry));
-	int endtime = sscanf(line+level,amt-level,"%ld.%ld ",
-											 &e->modified.tv_sec,
-											 &e->modified.tv_nsec);
-
-	char* name = malloc(amt-endtime-level);
-	memcpy(name,line+level+endtime,amt-endtime-level);
-
-	e->name = name;
-
-	if(old_level > level) {
-		// we're moving on up
-		// add this to the parent's parent, then return.
-		// this is never more than 1 level different
-		assert(parent);
-		parent = parent->parent;
-		++parent->nkids;
-		parent->children = realloc(parent->children,sizeof(*parent->children)*parent->nkids);
-		parent->children[nkids-1] = e;
-		return e;
-	}
-	if(old_level == level) {
-		
-		
-	
-	e->children = NULL;
-	e->nkids = 0;
-	e->
-	
-	int i;
-	for(i=0;i<level;++i) {
-		fputc(' ',out);
-		fputc(' ',out);
-	}
-	fprintf(out, "%ld.%ld\t%s\n",e->modified.tv_sec,e->modified.tv_nsec,e->name);
-	if(e->nkids) {
-		int i = 0;
-		for(i=0;i<e->nkids;++i) {
-			serialize(level+1, out, &e->children[i]);
+		int level;
+		for(level=0;level<amt;++level) {
+			if(line[level] != ' ') break;
 		}
+
+		struct entry* e = malloc(sizeof(struct entry));
+		e->was_seen = false;
+		int endtime = sscanf(line+level,amt-level,"%ld.%ld ",
+												 &e->modified.tv_sec,
+												 &e->modified.tv_nsec);
+
+		char* name = malloc(amt-endtime-level+1);
+		memcpy(name,line+level+endtime,amt-endtime-level);
+		name[amt-endtime-level] = '\0';
+		e->namelen = amt-endtime-level;
+		e->name = name;
+		e->children = NULL;
+
+		if(cur == NULL) {
+			assert(level == 0);
+			e->parent = NULL;
+			e->next = NULL;
+			root = e;
+		} else if(cur_level > level) {
+			// we're moving on up
+			// add this to the parent as a sibling
+			assert(cur->parent);
+			e->next = cur->parent->next;
+			if(cur->parent->next) {
+				cur->parent->next = e;
+			}
+			e->parent = cur->parent->parent;
+			--cur_level;
+		} else if(cur_level == level) {
+			// add as a sibling to cur
+			e->parent = cur->parent;
+			e->next = cur->next;
+			cur->next = e;
+		} else {
+			// going down. add to cur's children
+			e->next = cur->children;
+			cur->children = e;
+			e->parent = cur;
+			++cur_level;
+		}
+		cur = e;
 	}
+	return root;
 }
 
+struct entry* root = NULL;
 
 struct entry* dbstuff_add(struct entry* parent,
 													const char* name, int len, bool isdir, struct timespec mtime) {
-	BIND(text)(add_insert, 1, name, len, NULL);
-	BIND(int64)(add_insert, 2, parent);
-	BIND(int)(add_insert, 3, isdir ? 1 : 0);
-	BIND(int64)(add_insert, 4, mtime.tv_sec);
-	BIND(int64)(add_insert, 5, mtime.tv_nsec);
-	STEP(add_insert);
-	sqlite3_reset(add_insert);
-	return sqlite3_last_insert_rowid(db);
+	struct entry* e = malloc(sizeof(struct entry));
+	e->was_seen = false;
+	e->modified = mtime;
+	char* derpname = malloc(len);
+	memcpy(derpname,name,len);
+	e->name = derpname;
+	e->namelen = len;
+	e->parent = parent;
+	e->children = NULL;
+	e->next = NULL;
 }
 
-int dbstuff_update(identifier me, bool isdir, struct timespec mtime) {
-	BIND(int)(update, 1, isdir ? 1 : 0);
-	BIND(int64)(update, 2, mtime.tv_sec);
-	BIND(int64)(update, 3, mtime.tv_nsec);
-	BIND(int64)(update, 4, me);
-	STEP(update);
-	sqlite3_reset(update);
-	return sqlite3_changes(db);
+int dbstuff_update(struct entry* me, struct timespec mtime) {
+	if(me->modified.tv_sec == mtime.tv_sec)
+		if(me->modified.tv_nsec == mtime.tv_nsec)
+			return 0;
+	me->modified = mtime;
+	return 1;
 }
 
-bool dbstuff_has_seen(identifier me) {
-	if(me == -1) return false;
-	// but maybe haven't seen this session
-	BIND(int64)(has_seen, 1, me);
-	int res = STEP(has_seen);
-	sqlite3_reset(has_seen);
-	if(res == SQLITE_ROW) return true;
-	BIND(int64)(see_entry,1,me);
-	STEP(see_entry);
-	sqlite3_reset(see_entry);
-	return false;
+bool dbstuff_has_seen(struct entry* me) {
+	return me->was_seen;
 }
 
-identifier dbstuff_find(identifier parent,
-												const char* name, int len) {
-	BIND(text)(add_find, 1, name, len, NULL);
-	BIND(int64)(add_find, 2, parent);
-	int res = STEP(add_find);
-	if(res == SQLITE_ROW) {
-		identifier ret = sqlite3_column_int64(add_find, 0);
-		sqlite3_reset(add_find);
-		return ret;
+struct entry* dbstuff_find(struct entry* parent,
+													 const char* name, int len) {
+	struct entry* cur = parent->children;
+	while(cur) {
+		if(cur->namelen == len) {
+			if(0==memcmp(cur->name, name, len)) {
+				return cur;
+			}
+		}
+		cur = cur->next;
 	}
-	sqlite3_reset(add_find);
-	return -1;
+	return NULL;
 }
 
-/* expose this, because... tail recursion gets messed up when you pass function pointers. */
-
-sqlite3_stmt* dbstuff_children(identifier parent) {
-	// this must be reentrant! we will call children, before resetting children, when recursing!
-	sqlite3_stmt* stmt;
-#define PREFIX "CREATE TEMPORARY TABLE IF NOT EXISTS children"
-	char buf[0x100] = PREFIX;
-	size_t end = sizeof(PREFIX)-1 +
-		itoa(buf+sizeof(PREFIX)-1,0x100-sizeof(PREFIX)+1, parent);
-	memcpy(buf+end,LITLEN(" AS SELECT id,isdir,name,modified,modifiedns FROM entries WHERE parent = ? AND id != 0"));
-	PREPARE(stmt,buf);
-	BIND(int64)(stmt,1,parent);
-	STEP(stmt); // if not created, then okay.
-	sqlite3_finalize(stmt);
-	// now get results
-#undef PREFIX
-#define PREFIX "SELECT * FROM children"
-	memcpy(buf,LITLEN(PREFIX));
-	end = sizeof(PREFIX)-1 +
-		itoa(buf+sizeof(PREFIX)-1,0x100-sizeof(PREFIX)+1,parent);
-	buf[end] = '\0';
-	PREPARE(stmt,buf);
-	return stmt;
-#undef PREFIX
-}
-
-// note: children(0) -> topmost entries
+const char* dbfile = NULL;
 
 void dbstuff_close(void) {
-	prepare_finalize();
-	db_close();
+	FILE* out = fopen(".git/temp","wt");
+	save_ent(0, out, root);
+	fclose(out);
+	rename(".git/temp",dbfile);
+}
+
+void dbstuff_open(const char* dest) {
+	dbfile = dest;
+	FILE* inp = fopen(dbfile,"rt");
+	if(inp) {
+		root = load_ent(inp);
+	}
 }

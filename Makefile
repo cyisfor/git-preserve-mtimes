@@ -77,7 +77,7 @@ o/%.o: src/%.c | o
 clean:
 	rm -rf o
 
-libgit2 intern:
+libgit2/CMakeLists.txt libgit2 intern:
 	bash setup.sh
 
 o:

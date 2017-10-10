@@ -60,7 +60,7 @@ clean:
 	rm -rf o
 
 intern:
-	$(MAKE) setup
+	sh setup.sh
 
 o:
 	mkdir $@

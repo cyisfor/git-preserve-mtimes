@@ -27,6 +27,8 @@ N=http-parser
 $O: libgit2/deps/http-parser/http_parser.c
 	$(COMPILE)
 
+libgit2/deps/http-parser/http_parser.c: | libgit2
+
 prepare.gen.h prepare.gen.c o/prepare.gen.c o/prepare.gen.h: make-prepare src/prepare.sql | o
 	./make-prepare o/prepare.gen.h < src/prepare.sql
 

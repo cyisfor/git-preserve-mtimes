@@ -7,7 +7,7 @@ CFLAGS+=-ggdb -fdiagnostics-color=always -I. -Io
 CFLAGS+=-fshort-enums
 
 P=libgit2
-LDLIBS+=$(shell pkg-config --static --libs $(P))
+LDLIBS+=$(subst -lgit2,,$(shell pkg-config --static --libs $(P)))
 
 CFLAGS+=$(patsubst -I%,-isystem%, $(shell pkg-config --static --cflags $(P)))
 all: store restore installer
@@ -21,6 +21,10 @@ $(foreach name,$(N),$(eval targets:=$$(targets) $(name)))
 S=$(patsubst %,src/%.c,$N)
 
 targets:=$(targets) dbstuff
+
+N=http-parser
+$O: libgit2/deps/http-parser/http_parser.c
+	$(COMPILE)
 
 prepare.gen.h prepare.gen.c o/prepare.gen.c o/prepare.gen.h: make-prepare src/prepare.sql | o
 	./make-prepare o/prepare.gen.h < src/prepare.sql
@@ -36,12 +40,12 @@ N=install note
 installer: $O
 	$(LINK)
 
-N=store repo note dbstuff
+N=store repo note dbstuff http-parser
 store: $O intern/libintern.a libgit2/libgit2.a
 	$(LINK)
 
-N=restore repo note dbstuff libgit2/libgit2.a
-restore: $O
+N=restore repo note dbstuff http-parser
+restore: $O libgit2/libgit2.a
 	$(LINK)
 
 intern/libintern.a: intern/CMakeCache.txt | intern

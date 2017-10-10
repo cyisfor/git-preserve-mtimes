@@ -42,10 +42,10 @@ N=restore repo note dbstuff
 restore: $O
 	$(LINK)
 
-intern/libintern.a: intern/CMakeCache.txt
+intern/libintern.a: intern/CMakeCache.txt | intern
 	$(MAKE) -C intern
 
-intern/CMakeCache.txt:
+intern/CMakeCache.txt: | intern
 	cd intern && cmake \
 		-DMMAP_PAGES=1 \
 		-DPAGE_SIZE=512 \
@@ -58,6 +58,9 @@ o/%.o: src/%.c | o
 
 clean:
 	rm -rf o
+
+intern:
+	$(MAKE) setup
 
 o:
 	mkdir $@

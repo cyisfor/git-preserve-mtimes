@@ -1,3 +1,4 @@
+#include "note.h"
 #include "itoa.h"
 #include "dbstuff.h"
 #include <stdlib.h> // NULL

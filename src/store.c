@@ -143,7 +143,7 @@ void store_index(void) {
 				return;
 			}
 			me = write_entry(me, parent, name);
-			if(istree) {
+			if(me && istree) {
 				ensure0(chdir(me->name));
 				onelevel(me, path+clen+1, len-clen-1);
 				ensure0(chdir(".."));

@@ -1,12 +1,7 @@
 VPATH = o src
 
-P=libgit2
-PKG_CONFIG_PATH:=/custom/libgit2/lib/pkgconfig
-export PKG_CONFIG_PATH
-
-CFLAGS+=-ggdb -fdiagnostics-color=always $(patsubst -I%,-isystem%, $(shell pkg-config --cflags $(P))) -I. -Io
+CFLAGS+=-ggdb -fdiagnostics-color=always -I. -Io
 CFLAGS+=-fshort-enums
-LDLIBS+=$(shell pkg-config --libs $(P))
 
 all: store restore installer
 
@@ -45,6 +40,12 @@ restore: $O
 intern/libintern.a: intern/CMakeCache.txt | intern
 	$(MAKE) -C intern
 
+libgit2/CMakeCache.txt: libgit2/CMakeLists.txt | libgit2
+	cd libgit2 && cmake \
+		-DBUILD_SHARED_LIBS=OFF \
+		-DTHREADSAFE=OFF
+
+
 intern/CMakeCache.txt: | intern
 	cd intern && cmake \
 		-DMMAP_PAGES=1 \
@@ -59,7 +60,7 @@ o/%.o: src/%.c | o
 clean:
 	rm -rf o
 
-intern:
+libgit2 intern:
 	bash setup.sh
 
 o:

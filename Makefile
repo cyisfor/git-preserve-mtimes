@@ -60,7 +60,7 @@ clean:
 	rm -rf o
 
 intern:
-	sh setup.sh
+	bash setup.sh
 
 o:
 	mkdir $@

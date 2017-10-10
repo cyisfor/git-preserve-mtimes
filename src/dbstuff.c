@@ -73,11 +73,28 @@ struct entry* load_ent(FILE* inp) {
 
 		struct entry* e = malloc(sizeof(struct entry));
 		e->was_seen = false;
+		struct entry* fail(const char* message) {
+			WARN(message);
+			free(e);
+			e = root;
+			while(e) {
+				struct entry* next = e->next;
+				free(e);
+				e = next;
+			}
+			return NULL;
+		}
 		char* end = NULL;
 		e->modified.tv_sec = strtol(line+level,&end,10);
-		assert(*end == '.');
+		if(*end != '.')
+			return fail("bad format, no dot between numbers");
+		if(end == line+level)
+			return fail("bad format, no seconds found");
+		if(e->modified.tv_sec == 0)
+			return fail("I wasn't using this in 1970.");
 		e->modified.tv_nsec = strtol(end+1,&end,10);
-		assert(*end == ' ');
+		if(*end != ' ')
+			return fail("bad format, no space after times");
 		int endtime = (end - line) + 1;
 		char* name = malloc(amt-endtime+1);
 		memcpy(name,line+endtime,amt-endtime);

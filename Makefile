@@ -5,6 +5,7 @@ export PKG_CONFIG_PATH
 
 CFLAGS+=-ggdb -fdiagnostics-color=always -I. -Io
 CFLAGS+=-fshort-enums
+CFLAGS+=-isystemlibgit2/include
 
 P=libgit2
 LDLIBS+=$(subst -lgit2,,$(shell pkg-config --static --libs $(P)))

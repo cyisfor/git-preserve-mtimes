@@ -1,8 +1,15 @@
 VPATH = o src
 
+PKG_CONFIG_PATH:=libgit2/
+export PKG_CONFIG_PATH
+
 CFLAGS+=-ggdb -fdiagnostics-color=always -I. -Io
 CFLAGS+=-fshort-enums
 
+P=libgit2
+LDLIBS+=$(shell pkg-config --static --libs $(P))
+
+CFLAGS+=$(patsubst -I%,-isystem%, $(shell pkg-config --static --cflags $(P)))
 all: store restore installer
 
 LINK=$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
@@ -30,21 +37,24 @@ installer: $O
 	$(LINK)
 
 N=store repo note dbstuff
-store: $O intern/libintern.a
+store: $O intern/libintern.a libgit2/libgit2.a
 	$(LINK)
 
-N=restore repo note dbstuff
+N=restore repo note dbstuff libgit2/libgit2.a
 restore: $O
 	$(LINK)
 
 intern/libintern.a: intern/CMakeCache.txt | intern
 	$(MAKE) -C intern
 
-libgit2/CMakeCache.txt: libgit2/CMakeLists.txt | libgit2
+libgit2/Makefile: libgit2/CMakeLists.txt | libgit2
 	cd libgit2 && cmake \
 		-DBUILD_SHARED_LIBS=OFF \
-		-DTHREADSAFE=OFF
+		-DTHREADSAFE=OFF \
+		-DBUILD_CLAR=OFF
 
+libgit2/libgit2.a: libgit2/Makefile
+	$(MAKE) -C libgit2
 
 intern/CMakeCache.txt: | intern
 	cd intern && cmake \

@@ -39,6 +39,9 @@
  */
 
 static
+bool dirty = false;
+
+static
 void save_ent(int level, FILE* out, struct entry* e) {
 	while(e) {
 		int i;
@@ -140,6 +143,7 @@ struct entry* dbstuff_root = NULL;
 
 struct entry* dbstuff_add(struct entry* parent,
 													const char* name, int len, struct timespec mtime) {
+	dirty = true;
 	struct entry* e = malloc(sizeof(struct entry));
 	e->was_seen = false;
 	e->modified = mtime;
@@ -166,6 +170,7 @@ int dbstuff_update(struct entry* me, struct timespec mtime) {
 	if(me->modified.tv_sec == mtime.tv_sec)
 		if(me->modified.tv_nsec == mtime.tv_nsec)
 			return 0;
+	dirty = true;
 	me->modified = mtime;
 	return 1;
 }
@@ -191,6 +196,7 @@ struct entry* dbstuff_find(struct entry* parent,
 const char* dbfile = NULL;
 
 void dbstuff_close(void) {
+	if(!dirty) return;
 	FILE* out = fopen(".git/temp","wt");
 	save_ent(0, out, dbstuff_root);
 	fclose(out);
@@ -199,6 +205,7 @@ void dbstuff_close(void) {
 
 void dbstuff_open(const char* dest) {
 	dbfile = dest;
+	dirty = false;
 	FILE* inp = fopen(dbfile,"rt");
 	if(inp) {
 		dbstuff_root = load_ent(inp);

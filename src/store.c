@@ -29,6 +29,7 @@ struct treestack {
 	int nlen;
 };
 
+static
 bool dirty = false;
 
 static struct entry* write_entry(struct entry* me,
